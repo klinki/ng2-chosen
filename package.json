@@ -1,5 +1,7 @@
 {
   "name": "ng2-chosen",
+  "version" : "0.0.1",
+  "description" : "Angular 2 implementation of Chosen",
   "devDependencies": {     
     "bower": "1.6.5",
     "connect": "^3.3.4",

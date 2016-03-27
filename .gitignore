@@ -1,0 +1,8 @@
+/.idea
+/node_modules
+/bower_components
+/npm-debug.log
+/target
+/example/node_modules
+/example/bower_components
+/example/dist

@@ -54,7 +54,7 @@ interface InternalChosenOption extends ChosenOption {
                [class.chosen-single-with-deselect]="!isSelectionEmpty() && allow_single_deselect"
                [class.chosen-default]="isSelectionEmpty()">
 
-            <span [ngSwitch]="singleSelectedOption == null">
+            <span [ngSwitch]="isSelectionEmpty()">
                  <template [ngSwitchWhen]="true">
                      {{placeholder_text_single}}
                  </template>
@@ -71,7 +71,7 @@ interface InternalChosenOption extends ChosenOption {
             </a>
         </template>
     </div>
-    <div class="chosen-drop">
+    <div  class="chosen-drop">
         <div *ngIf="!multiple" class="chosen-search">
             <input (blur)="chosenBlur()" (keyup)="inputKeyup($event)" [(ngModel)]="inputValue"  #chosenInput type="text" autocomplete="off" tabindex="5">
         </div>
@@ -89,7 +89,7 @@ interface InternalChosenOption extends ChosenOption {
                 </li>
             </template>
 
-            <li *ngIf="filterMode && filterResultCount == 0"  class="no-results">{{no_results_text}} "<span>{{inputValue}}</span>"</li>
+            <li *ngIf="filterMode && filterResultCount == 0" class="no-results">{{no_results_text}} "<span>{{inputValue}}</span>"</li>
         </ul>
     </div>
 </div>
@@ -109,9 +109,9 @@ export class ChosenComponent extends DefaultValueAccessor {
 
     initialValue:Array<string> | string;
 
-    singleSelectedOption:ChosenOption;
+    singleSelectedOption:InternalChosenOption;
 
-    multipleSelectedOptions:Array<ChosenOption>;
+    multipleSelectedOptions:Array<InternalChosenOption>;
 
     chosenContainerActive:boolean = false;
 
@@ -191,7 +191,7 @@ export class ChosenComponent extends DefaultValueAccessor {
 
     inputKeyup($event) {
         let inputValue = $event.target.value;
-        if (inputValue.trim().length > 0 ) {
+        if (inputValue.trim().length > 0) {
             this.filterResultCount = 0;
             this.options_.forEach((option:InternalChosenOption) => {
                 var indexOf = option.label.toLowerCase().indexOf(inputValue.toLowerCase());
@@ -200,7 +200,6 @@ export class ChosenComponent extends DefaultValueAccessor {
                     option.labelWithMark = option.label.replace(subString, `<em>${subString}</em>`);
                     option.hit = true;
                     this.filterResultCount++;
-
                 } else {
                     option.hit = false;
 
@@ -277,7 +276,6 @@ export class ChosenComponent extends DefaultValueAccessor {
         }
         this.updateModel();
     }
-
 
     updateModel() {
         if (this.multiple) {

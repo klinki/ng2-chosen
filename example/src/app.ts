@@ -1,16 +1,11 @@
 import {CORE_DIRECTIVES} from 'angular2/common';
 import {Component} from 'angular2/core';
-
-
-import {FORM_DIRECTIVES} from "angular2/common";
-
-import {ChosenComponent} from "chosen";
-import {ChosenOption} from "chosen";
+import {ChosenComponent,ChosenOption} from "chosen";
 
 @Component({
     selector: 'app',
     templateUrl: 'app.html',
-    directives: [CORE_DIRECTIVES, FORM_DIRECTIVES, ChosenComponent]
+    directives: [CORE_DIRECTIVES, ChosenComponent]
 })
 export class Application {
 
@@ -21,6 +16,7 @@ export class Application {
     value:string = null;
 
     constructor() {
+
         setTimeout(()=> {
             this.options = [{label: "Tunisia", value: "1"}, {label: "France", value: "2"}, {label: "USA", value: "3"}];
         }, 100)

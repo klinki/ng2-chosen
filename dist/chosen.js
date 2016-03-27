@@ -15,9 +15,6 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 var common_1 = require('angular2/common');
 var core_1 = require('angular2/core');
-var common_2 = require("angular2/common");
-var common_3 = require("angular2/common");
-var common_4 = require("angular2/common");
 var ChosenComponent = (function (_super) {
     __extends(ChosenComponent, _super);
     function ChosenComponent(model, el, renderer) {
@@ -28,10 +25,12 @@ var ChosenComponent = (function (_super) {
         this.multiple = true;
         this.placeholder_text_multiple = "Select Some Options";
         this.placeholder_text_single = "Select an Option";
+        this.no_results_text = "No results match";
         this.allow_single_deselect = false;
         this.chosenContainerActive = false;
         this.chosenWithDrop = false;
         this.filterMode = false;
+        this.filterResultCount = 0;
         model.valueAccessor = this;
     }
     Object.defineProperty(ChosenComponent.prototype, "options", {
@@ -94,22 +93,30 @@ var ChosenComponent = (function (_super) {
         this.chosenContainerActive = false;
         this.chosenWithDrop = false;
         this.filterMode = false;
+        this.inputValue = null;
     };
     ChosenComponent.prototype.inputKeyup = function ($event) {
+        var _this = this;
         var inputValue = $event.target.value;
-        if (inputValue.trim().length > 0 || $event.code == 'Backspace') {
+        if (inputValue.trim().length > 0) {
+            this.filterResultCount = 0;
             this.options_.forEach(function (option) {
                 var indexOf = option.label.toLowerCase().indexOf(inputValue.toLowerCase());
                 if (indexOf > -1) {
                     var subString = option.label.substring(indexOf, inputValue.length);
                     option.labelWithMark = option.label.replace(subString, "<em>" + subString + "</em>");
                     option.hit = true;
+                    _this.filterResultCount++;
                 }
                 else {
                     option.hit = false;
                 }
             });
             this.filterMode = true;
+        }
+        else {
+            this.filterResultCount = 0;
+            this.filterMode = false;
         }
     };
     ChosenComponent.prototype.getChosenInputValue = function () {
@@ -205,6 +212,10 @@ var ChosenComponent = (function (_super) {
     ], ChosenComponent.prototype, "placeholder_text_single", void 0);
     __decorate([
         core_1.Input(), 
+        __metadata('design:type', Object)
+    ], ChosenComponent.prototype, "no_results_text", void 0);
+    __decorate([
+        core_1.Input(), 
         __metadata('design:type', Boolean)
     ], ChosenComponent.prototype, "allow_single_deselect", void 0);
     __decorate([
@@ -215,12 +226,12 @@ var ChosenComponent = (function (_super) {
     ChosenComponent = __decorate([
         core_1.Component({
             selector: 'chosen',
-            template: "\n\n\n<div class=\"chosen-container\"\n    [class.chosen-container-multi]=\"multiple\"\n    [class.chosen-container-single]=\"!multiple\"\n    [class.chosen-container-active]=\"chosenContainerActive\"\n    [class.chosen-with-drop]=\"chosenWithDrop\">\n\n    <div [ngSwitch]=\"multiple\">\n        <template [ngSwitchWhen]=\"true\">\n            <ul class=\"chosen-choices\">\n                <template [ngIf]=\"multipleSelectedOptions != null\">\n                    <template ngFor #option [ngForOf]=\"multipleSelectedOptions\" #i=\"index\">\n                        <li class=\"search-choice\">\n                            <span>{{option.label}}</span>\n                            <a class=\"search-choice-close\"\n                                (click)=\"chosenInput.focus();optionDeselect(option, $event);\"\n                               data-option-array-index=\"4\">\n                            </a>\n                        </li>\n                    </template>\n                </template>\n\n                <li class=\"search-field\">\n                    <input #chosenInput type=\"text\"\n                    [value]=\"getChosenInputValue()\"\n                    [class.default]=\"isSelectionEmpty()\"\n                    (focus)=\"chosenFocus()\"\n                    (blur)=\"chosenBlur()\"\n                    (keyup)=\"inputKeyup($event)\"\n                    tabindex=\"i\" autocomplete=\"off\"/>\n                </li>\n            </ul>\n        </template>\n        <template [ngSwitchWhen]=\"false\">\n            <a (click)=\"chosenFocus(chosenInput)\" class=\"chosen-single\"\n               [class.chosen-single-with-deselect]=\"!isSelectionEmpty() && allow_single_deselect\"\n               [class.chosen-default]=\"isSelectionEmpty()\">\n\n            <span [ngSwitch]=\"singleSelectedOption == null\">\n                 <template [ngSwitchWhen]=\"true\">\n                     {{placeholder_text_single}}\n                 </template>\n                 <template [ngSwitchWhen]=\"false\">\n                     {{singleSelectedOption.label}}\n                 </template>\n            </span>\n\n                <abbr *ngIf=\"!isSelectionEmpty() && allow_single_deselect\"\n                    (click)=\"optionDeselect(singleSelectedOption , $event)\" class=\"search-choice-close\">\n                </abbr>\n\n                <div><b></b></div>\n            </a>\n        </template>\n    </div>\n    <div class=\"chosen-drop\">\n        <div *ngIf=\"!multiple\" class=\"chosen-search\">\n            <input (blur)=\"chosenBlur()\" (keyup)=\"inputKeyup($event)\" #chosenInput type=\"text\" autocomplete=\"off\" tabindex=\"5\">\n        </div>\n        <ul class=\"chosen-results\">\n            <template ngFor #option [ngForOf]=\"options_\" #i=\"index\">\n                <li *ngIf=\"showOptionInChosenDrop(option)\"\n                    [class.highlighted]=\"option.highlighted\"\n                    [class.result-selected]=\"isOptionSelected(option)\"\n                    [class.active-result]=\"!isOptionSelected(option)\"\n                    (mouseover)=\"!isOptionSelected(option) && option.highlighted = true\"\n                    (mouseout)=\"option.highlighted = false\"\n                    (mousedown)=\"optionSelect(option)\"\n                    data-option-array-index=\"i\">\n                    <span [innerHtml]=\"optionLabelInChosenDrop(option)\"></span>\n                </li>\n            </template>\n        </ul>\n    </div>\n</div>\n    ",
-            directives: [common_1.CORE_DIRECTIVES, common_3.FORM_DIRECTIVES]
+            template: "\n\n<div class=\"chosen-container\"\n    [class.chosen-container-multi]=\"multiple\"\n    [class.chosen-container-single]=\"!multiple\"\n    [class.chosen-container-active]=\"chosenContainerActive\"\n    [class.chosen-with-drop]=\"chosenWithDrop\">\n\n    <div [ngSwitch]=\"multiple\">\n        <template [ngSwitchWhen]=\"true\">\n            <ul class=\"chosen-choices\">\n                <template [ngIf]=\"multipleSelectedOptions != null\">\n                    <template ngFor #option [ngForOf]=\"multipleSelectedOptions\" #i=\"index\">\n                        <li class=\"search-choice\">\n                            <span>{{option.label}}</span>\n                            <a class=\"search-choice-close\"\n                                (click)=\"chosenInput.focus();optionDeselect(option, $event);\"\n                               data-option-array-index=\"4\">\n                            </a>\n                        </li>\n                    </template>\n                </template>\n\n                <li class=\"search-field\">\n                    <input #chosenInput type=\"text\"\n                    [value]=\"getChosenInputValue()\"\n                    [(ngModel)]=\"inputValue\"\n                    [class.default]=\"isSelectionEmpty()\"\n                    (focus)=\"chosenFocus()\"\n                    (blur)=\"chosenBlur()\"\n                    (keyup)=\"inputKeyup($event)\"\n                    tabindex=\"i\" autocomplete=\"off\"/>\n                </li>\n            </ul>\n        </template>\n        <template [ngSwitchWhen]=\"false\">\n            <a (click)=\"chosenFocus(chosenInput)\" class=\"chosen-single\"\n               [class.chosen-single-with-deselect]=\"!isSelectionEmpty() && allow_single_deselect\"\n               [class.chosen-default]=\"isSelectionEmpty()\">\n\n            <span [ngSwitch]=\"singleSelectedOption == null\">\n                 <template [ngSwitchWhen]=\"true\">\n                     {{placeholder_text_single}}\n                 </template>\n                 <template [ngSwitchWhen]=\"false\">\n                     {{singleSelectedOption.label}}\n                 </template>\n            </span>\n\n                <abbr *ngIf=\"!isSelectionEmpty() && allow_single_deselect\"\n                    (click)=\"optionDeselect(singleSelectedOption , $event)\" class=\"search-choice-close\">\n                </abbr>\n\n                <div><b></b></div>\n            </a>\n        </template>\n    </div>\n    <div class=\"chosen-drop\">\n        <div *ngIf=\"!multiple\" class=\"chosen-search\">\n            <input (blur)=\"chosenBlur()\" (keyup)=\"inputKeyup($event)\" [(ngModel)]=\"inputValue\"  #chosenInput type=\"text\" autocomplete=\"off\" tabindex=\"5\">\n        </div>\n        <ul class=\"chosen-results\">\n            <template ngFor #option [ngForOf]=\"options_\" #i=\"index\">\n                <li *ngIf=\"showOptionInChosenDrop(option)\"\n                    [class.highlighted]=\"option.highlighted\"\n                    [class.result-selected]=\"isOptionSelected(option)\"\n                    [class.active-result]=\"!isOptionSelected(option)\"\n                    (mouseover)=\"!isOptionSelected(option) && option.highlighted = true\"\n                    (mouseout)=\"option.highlighted = false\"\n                    (mousedown)=\"optionSelect(option)\"\n                    data-option-array-index=\"i\">\n                    <span [innerHtml]=\"optionLabelInChosenDrop(option)\"></span>\n                </li>\n            </template>\n\n            <li *ngIf=\"filterMode && filterResultCount == 0\"  class=\"no-results\">{{no_results_text}} \"<span>{{inputValue}}</span>\"</li>\n        </ul>\n    </div>\n</div>\n    ",
+            directives: [common_1.CORE_DIRECTIVES, common_1.FORM_DIRECTIVES]
         }), 
-        __metadata('design:paramtypes', [common_4.NgModel, core_1.ElementRef, core_1.Renderer])
+        __metadata('design:paramtypes', [common_1.NgModel, core_1.ElementRef, core_1.Renderer])
     ], ChosenComponent);
     return ChosenComponent;
-}(common_2.DefaultValueAccessor));
+}(common_1.DefaultValueAccessor));
 exports.ChosenComponent = ChosenComponent;
 //# sourceMappingURL=chosen.js.map

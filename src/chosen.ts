@@ -1,10 +1,5 @@
-import {CORE_DIRECTIVES} from 'angular2/common';
+import {CORE_DIRECTIVES,NG_VALUE_ACCESSOR, FORM_DIRECTIVES,ControlValueAccessor,DefaultValueAccessor,NgModel} from 'angular2/common';
 import {Component,Input,ElementRef,Renderer} from 'angular2/core';
-
-import {NG_VALUE_ACCESSOR, ControlValueAccessor} from 'angular2/common';
-import {DefaultValueAccessor} from "angular2/common";
-import {FORM_DIRECTIVES} from "angular2/common";
-import {NgModel} from "angular2/common";
 
 export interface ChosenOption {
     value :string,
@@ -20,7 +15,6 @@ interface InternalChosenOption extends ChosenOption {
 @Component({
     selector: 'chosen',
     template: `
-
 
 <div class="chosen-container"
     [class.chosen-container-multi]="multiple"
@@ -46,6 +40,7 @@ interface InternalChosenOption extends ChosenOption {
                 <li class="search-field">
                     <input #chosenInput type="text"
                     [value]="getChosenInputValue()"
+                    [(ngModel)]="inputValue"
                     [class.default]="isSelectionEmpty()"
                     (focus)="chosenFocus()"
                     (blur)="chosenBlur()"
@@ -78,7 +73,7 @@ interface InternalChosenOption extends ChosenOption {
     </div>
     <div class="chosen-drop">
         <div *ngIf="!multiple" class="chosen-search">
-            <input (blur)="chosenBlur()" (keyup)="inputKeyup($event)" #chosenInput type="text" autocomplete="off" tabindex="5">
+            <input (blur)="chosenBlur()" (keyup)="inputKeyup($event)" [(ngModel)]="inputValue"  #chosenInput type="text" autocomplete="off" tabindex="5">
         </div>
         <ul class="chosen-results">
             <template ngFor #option [ngForOf]="options_" #i="index">
@@ -93,6 +88,8 @@ interface InternalChosenOption extends ChosenOption {
                     <span [innerHtml]="optionLabelInChosenDrop(option)"></span>
                 </li>
             </template>
+
+            <li *ngIf="filterMode && filterResultCount == 0"  class="no-results">{{no_results_text}} "<span>{{inputValue}}</span>"</li>
         </ul>
     </div>
 </div>
@@ -105,6 +102,7 @@ export class ChosenComponent extends DefaultValueAccessor {
 
     @Input() placeholder_text_multiple:string = "Select Some Options";
     @Input() placeholder_text_single:string = "Select an Option";
+    @Input() no_results_text = "No results match";
     @Input() allow_single_deselect:boolean = false;
 
     options_:Array<InternalChosenOption>;
@@ -119,7 +117,11 @@ export class ChosenComponent extends DefaultValueAccessor {
 
     chosenWithDrop:boolean = false;
 
+    inputValue : string;
+
     filterMode:boolean = false;
+
+    filterResultCount:number = 0;
 
     constructor(private model:NgModel, private el:ElementRef, private renderer:Renderer) {
         super(renderer, el);
@@ -176,7 +178,6 @@ export class ChosenComponent extends DefaultValueAccessor {
         if (chosenInput != null) {
             chosenInput.focus();
         }
-
         this.chosenContainerActive = true;
         this.chosenWithDrop = true;
     }
@@ -185,22 +186,30 @@ export class ChosenComponent extends DefaultValueAccessor {
         this.chosenContainerActive = false;
         this.chosenWithDrop = false;
         this.filterMode = false;
+        this.inputValue = null;
     }
 
     inputKeyup($event) {
         let inputValue = $event.target.value;
-        if (inputValue.trim().length > 0 || $event.code == 'Backspace') {
-            this.options_.forEach(option => {
+        if (inputValue.trim().length > 0 ) {
+            this.filterResultCount = 0;
+            this.options_.forEach((option:InternalChosenOption) => {
                 var indexOf = option.label.toLowerCase().indexOf(inputValue.toLowerCase());
                 if (indexOf > -1) {
                     let subString = option.label.substring(indexOf, inputValue.length);
                     option.labelWithMark = option.label.replace(subString, `<em>${subString}</em>`);
                     option.hit = true;
+                    this.filterResultCount++;
+
                 } else {
                     option.hit = false;
+
                 }
             });
             this.filterMode = true;
+        } else {
+            this.filterResultCount = 0;
+            this.filterMode = false;
         }
     }
 
@@ -275,7 +284,7 @@ export class ChosenComponent extends DefaultValueAccessor {
             if (this.multipleSelectedOptions == null || this.multipleSelectedOptions.length == 0) {
                 this.onChange(null);
             } else {
-                this.onChange(this.multipleSelectedOptions.map(option => option.value))
+                this.onChange(this.multipleSelectedOptions.map(option => option.value));
             }
         } else {
             if (this.singleSelectedOption == null) {
@@ -286,6 +295,9 @@ export class ChosenComponent extends DefaultValueAccessor {
         }
     }
 }
+
+
+
 
 
 

@@ -50,7 +50,7 @@ interface InternalChosenOption extends ChosenOption {
             </ul>
         </template>
         <template [ngSwitchWhen]="false">
-            <a (click)="chosenFocus(chosenInput)" class="chosen-single"
+            <a (click)="chosenFocus(chosenInput)"  class="chosen-single"
                [class.chosen-single-with-deselect]="!isSelectionEmpty() && allow_single_deselect"
                [class.chosen-default]="isSelectionEmpty()">
 
@@ -72,7 +72,7 @@ interface InternalChosenOption extends ChosenOption {
         </template>
     </div>
     <div  class="chosen-drop">
-        <div *ngIf="!multiple" class="chosen-search">
+        <div *ngIf="!multiple && !disableSearch()" class="chosen-search">
             <input (blur)="chosenBlur()" (keyup)="inputKeyup($event)" [(ngModel)]="inputValue"  #chosenInput type="text" autocomplete="off" tabindex="5">
         </div>
         <ul class="chosen-results">
@@ -104,6 +104,8 @@ export class ChosenComponent extends DefaultValueAccessor {
     @Input() placeholder_text_single:string = "Select an Option";
     @Input() no_results_text = "No results match";
     @Input() allow_single_deselect:boolean = false;
+    @Input() disable_search = false;
+    @Input() disable_search_threshold : number = 0;
 
     options_:Array<InternalChosenOption>;
 
@@ -172,6 +174,15 @@ export class ChosenComponent extends DefaultValueAccessor {
                 }
             }
         }
+    }
+
+    /**
+     * Only for single Mode
+     * @returns {boolean}
+     */
+    disableSearch() {
+        return this.disable_search
+            || (this.disable_search_threshold !=0 && this.options_ != null && this.options_.length <= this.disable_search_threshold);
     }
 
     chosenFocus(chosenInput) {

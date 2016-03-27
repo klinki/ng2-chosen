@@ -21,6 +21,7 @@ interface InternalChosenOption extends ChosenOption {
     selector: 'chosen',
     template: `
 
+
 <div class="chosen-container"
     [class.chosen-container-multi]="multiple"
     [class.chosen-container-single]="!multiple"
@@ -226,7 +227,7 @@ export class ChosenComponent extends DefaultValueAccessor {
         if (this.multiple) {
             return this.multipleSelectedOptions.find(option_ => option_ == option) != null;
         } else {
-            this.singleSelectedOption == option;
+            return this.singleSelectedOption == option;
         }
     }
 
@@ -267,6 +268,7 @@ export class ChosenComponent extends DefaultValueAccessor {
         }
         this.updateModel();
     }
+
 
     updateModel() {
         if (this.multiple) {

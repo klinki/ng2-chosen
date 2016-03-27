@@ -52,4 +52,12 @@ gulp.task('build.system', function () {
     });
 });
 
-gulp.task('default', ['clean', 'build.system', 'build.commonjs']);
+gulp.task('ts', ['build.system', 'build.commonjs']);
+
+gulp.task('default', ['clean', 'ts']);
+
+gulp.task('dev', ['default'], function () {
+
+    gulp.watch('src/**/*.ts', ['ts']);
+
+});

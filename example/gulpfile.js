@@ -47,20 +47,18 @@ gulp.task('css', function () {
 });
 
 
-
-gulp.task('ng2-chosen-copy', function () {
-    return gulp.src('../dist/**/*')
-        .pipe(gulp.dest('node_modules/ng2-chosen'));
-
-});
-
-gulp.task('libs',['ng2-chosen-copy'], function () {
+gulp.task('libs', function () {
     return gulp.src(PATHS.lib)
         .pipe(gulp.dest('dist/lib'));
 
 });
 
-gulp.task('play', ['default'], function () {
+gulp.task('copyNg2Chosen', function () {
+    return gulp.src("../dist/*.*")
+        .pipe(gulp.dest('dist/lib/ng2-chosen/dist'));
+});
+
+gulp.task('dev', ['default'], function () {
 
     var http = require('http');
     var connect = require('connect');
@@ -68,6 +66,9 @@ gulp.task('play', ['default'], function () {
     var open = require('open');
 
     var port = 8888, app;
+
+
+    gulp.watch("../dist/*.*", ['copyNg2Chosen']);
 
     gulp.watch(PATHS.src.html, ['html']);
     gulp.watch(PATHS.src.ts, ['ts']);
@@ -78,7 +79,5 @@ gulp.task('play', ['default'], function () {
         open('http://localhost:' + port);
     });
 });
-
-
 
 gulp.task('default', ['ts', 'css', 'html', 'libs']);

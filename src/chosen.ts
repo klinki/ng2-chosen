@@ -1,4 +1,4 @@
-import {CORE_DIRECTIVES,NG_VALUE_ACCESSOR, FORM_DIRECTIVES,ControlValueAccessor,DefaultValueAccessor,NgModel} from 'angular2/common';
+import {CORE_DIRECTIVES,NG_VALUE_ACCESSOR,FORM_DIRECTIVES,DefaultValueAccessor,NgModel} from 'angular2/common';
 import {Component,Input,ElementRef,Renderer} from 'angular2/core';
 
 export interface ChosenOption {
@@ -29,17 +29,13 @@ interface InternalChosenOption extends ChosenOption {
                     <template ngFor #option [ngForOf]="multipleSelectedOptions" #i="index">
                         <li class="search-choice">
                             <span>{{option.label}}</span>
-                            <a class="search-choice-close"
-                                (click)="chosenInput.focus();optionDeselect(option, $event);"
-                               data-option-array-index="4">
-                            </a>
+                            <a class="search-choice-close" (click)="chosenInput.focus();optionDeselect(option, $event);" data-option-array-index="4"></a>
                         </li>
                     </template>
                 </template>
 
                 <li class="search-field">
                     <input #chosenInput type="text"
-                    [value]="getChosenInputValue()"
                     [(ngModel)]="inputValue"
                     [class.default]="isSelectionEmpty()"
                     (focus)="chosenFocus()"
@@ -54,14 +50,14 @@ interface InternalChosenOption extends ChosenOption {
                [class.chosen-single-with-deselect]="!isSelectionEmpty() && allow_single_deselect"
                [class.chosen-default]="isSelectionEmpty()">
 
-            <span [ngSwitch]="isSelectionEmpty()">
-                 <template [ngSwitchWhen]="true">
-                     {{placeholder_text_single}}
-                 </template>
-                 <template [ngSwitchWhen]="false">
-                     {{singleSelectedOption.label}}
-                 </template>
-            </span>
+                <span [ngSwitch]="isSelectionEmpty()">
+                    <template [ngSwitchWhen]="true">
+                        {{placeholder_text_single}}
+                    </template>
+                    <template [ngSwitchWhen]="false">
+                        {{singleSelectedOption.label}}
+                    </template>
+                </span>
 
                 <abbr *ngIf="!isSelectionEmpty() && allow_single_deselect"
                     (click)="optionDeselect(singleSelectedOption , $event)" class="search-choice-close">
@@ -73,7 +69,7 @@ interface InternalChosenOption extends ChosenOption {
     </div>
     <div  class="chosen-drop">
         <div *ngIf="!multiple && !disableSearch()" class="chosen-search">
-            <input (blur)="chosenBlur()" (keyup)="inputKeyup($event)" [(ngModel)]="inputValue"  #chosenInput type="text" autocomplete="off" tabindex="5">
+            <input (blur)="chosenBlur()" (keyup)="inputKeyup($event)" [(ngModel)]="inputValue" #chosenInput type="text" autocomplete="off" tabindex="5">
         </div>
         <ul class="chosen-results">
             <template ngFor #option [ngForOf]="options_" #i="index">
@@ -98,14 +94,14 @@ interface InternalChosenOption extends ChosenOption {
 })
 export class ChosenComponent extends DefaultValueAccessor {
 
-    @Input()  multiple:boolean = true;
+    @Input() multiple:boolean = true;
 
     @Input() placeholder_text_multiple:string = "Select Some Options";
     @Input() placeholder_text_single:string = "Select an Option";
     @Input() no_results_text = "No results match";
     @Input() allow_single_deselect:boolean = false;
     @Input() disable_search = false;
-    @Input() disable_search_threshold : number = 0;
+    @Input() disable_search_threshold:number = 0;
 
     options_:Array<InternalChosenOption>;
 
@@ -119,7 +115,7 @@ export class ChosenComponent extends DefaultValueAccessor {
 
     chosenWithDrop:boolean = false;
 
-    inputValue : string;
+    inputValue:string;
 
     filterMode:boolean = false;
 
@@ -149,27 +145,23 @@ export class ChosenComponent extends DefaultValueAccessor {
     }
 
     updateOptionsWithSelection() {
-        if (this.options_ != null) {
-            if (this.initialValue != null) {
-
+        if (this.options_ != null && this.initialValue != null) {
+            if (this.multiple) {
+                this.multipleSelectedOptions = [];
+            }
+            for (var i = 0; i < this.options_.length; i++) {
+                let option = this.options_[i];
                 if (this.multiple) {
-                    this.multipleSelectedOptions = [];
-                }
-
-                for (var i = 0; i < this.options_.length; i++) {
-                    let option = this.options_[i];
-                    if (!this.multiple) {
-                        let initialValue = <string>this.initialValue;
-                        if (initialValue === option.value) {
-                            this.singleSelectedOption = option;
-                            option.selected = true;
-                            break;
-                        }
-                    } else {
-                        let initialValue = <Array<string>>this.initialValue;
-                        if (initialValue.find(value => value == option.value) != null) {
-                            this.multipleSelectedOptions.push(option);
-                        }
+                    let initialValue = <Array<string>>this.initialValue;
+                    if (initialValue.find(value => value == option.value) != null) {
+                        this.multipleSelectedOptions.push(option);
+                    }
+                } else {
+                    let initialValue = <string>this.initialValue;
+                    if (initialValue === option.value) {
+                        this.singleSelectedOption = option;
+                        option.selected = true;
+                        break;
                     }
                 }
             }
@@ -182,7 +174,7 @@ export class ChosenComponent extends DefaultValueAccessor {
      */
     disableSearch() {
         return this.disable_search
-            || (this.disable_search_threshold !=0 && this.options_ != null && this.options_.length <= this.disable_search_threshold);
+            || (this.disable_search_threshold != 0 && this.options_ != null && this.options_.length <= this.disable_search_threshold);
     }
 
     chosenFocus(chosenInput) {
@@ -191,13 +183,24 @@ export class ChosenComponent extends DefaultValueAccessor {
         }
         this.chosenContainerActive = true;
         this.chosenWithDrop = true;
+
+        if (this.multiple) {
+            this.inputValue = null;
+        }
     }
 
     chosenBlur() {
         this.chosenContainerActive = false;
         this.chosenWithDrop = false;
         this.filterMode = false;
-        this.inputValue = null;
+
+        if (this.multiple) {
+            if (this.isSelectionEmpty()) {
+                this.inputValue = this.placeholder_text_multiple;
+            } else {
+                this.inputValue = null;
+            }
+        }
     }
 
     inputKeyup($event) {
@@ -223,20 +226,9 @@ export class ChosenComponent extends DefaultValueAccessor {
         }
     }
 
-    getChosenInputValue() {
-        if (this.multiple) {
-            if (!this.chosenContainerActive && this.isSelectionEmpty()) {
-                return this.placeholder_text_multiple;
-            } else {
-                return null;
-            }
-        }
-    }
-
     isSelectionEmpty():boolean {
         if (this.multiple) {
             return this.multipleSelectedOptions == null || this.multipleSelectedOptions.length == 0;
-
         } else {
             return this.singleSelectedOption == null;
         }
@@ -263,14 +255,13 @@ export class ChosenComponent extends DefaultValueAccessor {
     }
 
     optionSelect(option) {
-        if (!this.multiple) {
-            this.singleSelectedOption = option;
-        } else {
+        if (this.multiple) {
             if (!this.multipleSelectedOptions.find(option_ => option_ == option)) {
                 this.multipleSelectedOptions.push(option)
             }
+        } else {
+            this.singleSelectedOption = option;
         }
-
         this.updateModel();
         this.chosenBlur();
     }
@@ -280,10 +271,10 @@ export class ChosenComponent extends DefaultValueAccessor {
             $event.stopPropagation();
         }
 
-        if (!this.multiple) {
-            this.singleSelectedOption = null;
-        } else {
+        if (this.multiple) {
             this.multipleSelectedOptions = this.multipleSelectedOptions.filter(option_ => option_ != option);
+        } else {
+            this.singleSelectedOption = null;
         }
         this.updateModel();
     }

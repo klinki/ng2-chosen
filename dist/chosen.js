@@ -54,33 +54,31 @@ var ChosenComponent = (function (_super) {
         }
     };
     ChosenComponent.prototype.updateOptionsWithSelection = function () {
-        if (this.options_ != null) {
-            if (this.initialValue != null) {
-                if (this.multiple) {
-                    this.multipleSelectedOptions = [];
-                }
-                var _loop_1 = function() {
-                    var option = this_1.options_[i];
-                    if (!this_1.multiple) {
-                        var initialValue = this_1.initialValue;
-                        if (initialValue === option.value) {
-                            this_1.singleSelectedOption = option;
-                            option.selected = true;
-                            return "break";
-                        }
+        if (this.options_ != null && this.initialValue != null) {
+            if (this.multiple) {
+                this.multipleSelectedOptions = [];
+            }
+            var _loop_1 = function() {
+                var option = this_1.options_[i];
+                if (this_1.multiple) {
+                    var initialValue = this_1.initialValue;
+                    if (initialValue.find(function (value) { return value == option.value; }) != null) {
+                        this_1.multipleSelectedOptions.push(option);
                     }
-                    else {
-                        var initialValue = this_1.initialValue;
-                        if (initialValue.find(function (value) { return value == option.value; }) != null) {
-                            this_1.multipleSelectedOptions.push(option);
-                        }
-                    }
-                };
-                var this_1 = this;
-                for (var i = 0; i < this.options_.length; i++) {
-                    var state_1 = _loop_1();
-                    if (state_1 === "break") break;
                 }
+                else {
+                    var initialValue = this_1.initialValue;
+                    if (initialValue === option.value) {
+                        this_1.singleSelectedOption = option;
+                        option.selected = true;
+                        return "break";
+                    }
+                }
+            };
+            var this_1 = this;
+            for (var i = 0; i < this.options_.length; i++) {
+                var state_1 = _loop_1();
+                if (state_1 === "break") break;
             }
         }
     };
@@ -94,12 +92,22 @@ var ChosenComponent = (function (_super) {
         }
         this.chosenContainerActive = true;
         this.chosenWithDrop = true;
+        if (this.multiple) {
+            this.inputValue = null;
+        }
     };
     ChosenComponent.prototype.chosenBlur = function () {
         this.chosenContainerActive = false;
         this.chosenWithDrop = false;
         this.filterMode = false;
-        this.inputValue = null;
+        if (this.multiple) {
+            if (this.isSelectionEmpty()) {
+                this.inputValue = this.placeholder_text_multiple;
+            }
+            else {
+                this.inputValue = null;
+            }
+        }
     };
     ChosenComponent.prototype.inputKeyup = function ($event) {
         var _this = this;
@@ -123,16 +131,6 @@ var ChosenComponent = (function (_super) {
         else {
             this.filterResultCount = 0;
             this.filterMode = false;
-        }
-    };
-    ChosenComponent.prototype.getChosenInputValue = function () {
-        if (this.multiple) {
-            if (!this.chosenContainerActive && this.isSelectionEmpty()) {
-                return this.placeholder_text_multiple;
-            }
-            else {
-                return null;
-            }
         }
     };
     ChosenComponent.prototype.isSelectionEmpty = function () {
@@ -163,13 +161,13 @@ var ChosenComponent = (function (_super) {
         }
     };
     ChosenComponent.prototype.optionSelect = function (option) {
-        if (!this.multiple) {
-            this.singleSelectedOption = option;
-        }
-        else {
+        if (this.multiple) {
             if (!this.multipleSelectedOptions.find(function (option_) { return option_ == option; })) {
                 this.multipleSelectedOptions.push(option);
             }
+        }
+        else {
+            this.singleSelectedOption = option;
         }
         this.updateModel();
         this.chosenBlur();
@@ -178,11 +176,11 @@ var ChosenComponent = (function (_super) {
         if ($event != null) {
             $event.stopPropagation();
         }
-        if (!this.multiple) {
-            this.singleSelectedOption = null;
+        if (this.multiple) {
+            this.multipleSelectedOptions = this.multipleSelectedOptions.filter(function (option_) { return option_ != option; });
         }
         else {
-            this.multipleSelectedOptions = this.multipleSelectedOptions.filter(function (option_) { return option_ != option; });
+            this.singleSelectedOption = null;
         }
         this.updateModel();
     };
@@ -240,7 +238,7 @@ var ChosenComponent = (function (_super) {
     ChosenComponent = __decorate([
         core_1.Component({
             selector: 'chosen',
-            template: "\n\n<div class=\"chosen-container\"\n    [class.chosen-container-multi]=\"multiple\"\n    [class.chosen-container-single]=\"!multiple\"\n    [class.chosen-container-active]=\"chosenContainerActive\"\n    [class.chosen-with-drop]=\"chosenWithDrop\">\n\n    <div [ngSwitch]=\"multiple\">\n        <template [ngSwitchWhen]=\"true\">\n            <ul class=\"chosen-choices\">\n                <template [ngIf]=\"multipleSelectedOptions != null\">\n                    <template ngFor #option [ngForOf]=\"multipleSelectedOptions\" #i=\"index\">\n                        <li class=\"search-choice\">\n                            <span>{{option.label}}</span>\n                            <a class=\"search-choice-close\"\n                                (click)=\"chosenInput.focus();optionDeselect(option, $event);\"\n                               data-option-array-index=\"4\">\n                            </a>\n                        </li>\n                    </template>\n                </template>\n\n                <li class=\"search-field\">\n                    <input #chosenInput type=\"text\"\n                    [value]=\"getChosenInputValue()\"\n                    [(ngModel)]=\"inputValue\"\n                    [class.default]=\"isSelectionEmpty()\"\n                    (focus)=\"chosenFocus()\"\n                    (blur)=\"chosenBlur()\"\n                    (keyup)=\"inputKeyup($event)\"\n                    tabindex=\"i\" autocomplete=\"off\"/>\n                </li>\n            </ul>\n        </template>\n        <template [ngSwitchWhen]=\"false\">\n            <a (click)=\"chosenFocus(chosenInput)\"  class=\"chosen-single\"\n               [class.chosen-single-with-deselect]=\"!isSelectionEmpty() && allow_single_deselect\"\n               [class.chosen-default]=\"isSelectionEmpty()\">\n\n            <span [ngSwitch]=\"isSelectionEmpty()\">\n                 <template [ngSwitchWhen]=\"true\">\n                     {{placeholder_text_single}}\n                 </template>\n                 <template [ngSwitchWhen]=\"false\">\n                     {{singleSelectedOption.label}}\n                 </template>\n            </span>\n\n                <abbr *ngIf=\"!isSelectionEmpty() && allow_single_deselect\"\n                    (click)=\"optionDeselect(singleSelectedOption , $event)\" class=\"search-choice-close\">\n                </abbr>\n\n                <div><b></b></div>\n            </a>\n        </template>\n    </div>\n    <div  class=\"chosen-drop\">\n        <div *ngIf=\"!multiple && !disableSearch()\" class=\"chosen-search\">\n            <input (blur)=\"chosenBlur()\" (keyup)=\"inputKeyup($event)\" [(ngModel)]=\"inputValue\"  #chosenInput type=\"text\" autocomplete=\"off\" tabindex=\"5\">\n        </div>\n        <ul class=\"chosen-results\">\n            <template ngFor #option [ngForOf]=\"options_\" #i=\"index\">\n                <li *ngIf=\"showOptionInChosenDrop(option)\"\n                    [class.highlighted]=\"option.highlighted\"\n                    [class.result-selected]=\"isOptionSelected(option)\"\n                    [class.active-result]=\"!isOptionSelected(option)\"\n                    (mouseover)=\"!isOptionSelected(option) && option.highlighted = true\"\n                    (mouseout)=\"option.highlighted = false\"\n                    (mousedown)=\"optionSelect(option)\"\n                    data-option-array-index=\"i\">\n                    <span [innerHtml]=\"optionLabelInChosenDrop(option)\"></span>\n                </li>\n            </template>\n\n            <li *ngIf=\"filterMode && filterResultCount == 0\" class=\"no-results\">{{no_results_text}} \"<span>{{inputValue}}</span>\"</li>\n        </ul>\n    </div>\n</div>\n    ",
+            template: "\n\n<div class=\"chosen-container\"\n    [class.chosen-container-multi]=\"multiple\"\n    [class.chosen-container-single]=\"!multiple\"\n    [class.chosen-container-active]=\"chosenContainerActive\"\n    [class.chosen-with-drop]=\"chosenWithDrop\">\n\n    <div [ngSwitch]=\"multiple\">\n        <template [ngSwitchWhen]=\"true\">\n            <ul class=\"chosen-choices\">\n                <template [ngIf]=\"multipleSelectedOptions != null\">\n                    <template ngFor #option [ngForOf]=\"multipleSelectedOptions\" #i=\"index\">\n                        <li class=\"search-choice\">\n                            <span>{{option.label}}</span>\n                            <a class=\"search-choice-close\" (click)=\"chosenInput.focus();optionDeselect(option, $event);\" data-option-array-index=\"4\"></a>\n                        </li>\n                    </template>\n                </template>\n\n                <li class=\"search-field\">\n                    <input #chosenInput type=\"text\"\n                    [(ngModel)]=\"inputValue\"\n                    [class.default]=\"isSelectionEmpty()\"\n                    (focus)=\"chosenFocus()\"\n                    (blur)=\"chosenBlur()\"\n                    (keyup)=\"inputKeyup($event)\"\n                    tabindex=\"i\" autocomplete=\"off\"/>\n                </li>\n            </ul>\n        </template>\n        <template [ngSwitchWhen]=\"false\">\n            <a (click)=\"chosenFocus(chosenInput)\"  class=\"chosen-single\"\n               [class.chosen-single-with-deselect]=\"!isSelectionEmpty() && allow_single_deselect\"\n               [class.chosen-default]=\"isSelectionEmpty()\">\n\n                <span [ngSwitch]=\"isSelectionEmpty()\">\n                    <template [ngSwitchWhen]=\"true\">\n                        {{placeholder_text_single}}\n                    </template>\n                    <template [ngSwitchWhen]=\"false\">\n                        {{singleSelectedOption.label}}\n                    </template>\n                </span>\n\n                <abbr *ngIf=\"!isSelectionEmpty() && allow_single_deselect\"\n                    (click)=\"optionDeselect(singleSelectedOption , $event)\" class=\"search-choice-close\">\n                </abbr>\n\n                <div><b></b></div>\n            </a>\n        </template>\n    </div>\n    <div  class=\"chosen-drop\">\n        <div *ngIf=\"!multiple && !disableSearch()\" class=\"chosen-search\">\n            <input (blur)=\"chosenBlur()\" (keyup)=\"inputKeyup($event)\" [(ngModel)]=\"inputValue\" #chosenInput type=\"text\" autocomplete=\"off\" tabindex=\"5\">\n        </div>\n        <ul class=\"chosen-results\">\n            <template ngFor #option [ngForOf]=\"options_\" #i=\"index\">\n                <li *ngIf=\"showOptionInChosenDrop(option)\"\n                    [class.highlighted]=\"option.highlighted\"\n                    [class.result-selected]=\"isOptionSelected(option)\"\n                    [class.active-result]=\"!isOptionSelected(option)\"\n                    (mouseover)=\"!isOptionSelected(option) && option.highlighted = true\"\n                    (mouseout)=\"option.highlighted = false\"\n                    (mousedown)=\"optionSelect(option)\"\n                    data-option-array-index=\"i\">\n                    <span [innerHtml]=\"optionLabelInChosenDrop(option)\"></span>\n                </li>\n            </template>\n\n            <li *ngIf=\"filterMode && filterResultCount == 0\" class=\"no-results\">{{no_results_text}} \"<span>{{inputValue}}</span>\"</li>\n        </ul>\n    </div>\n</div>\n    ",
             directives: [common_1.CORE_DIRECTIVES, common_1.FORM_DIRECTIVES]
         }), 
         __metadata('design:paramtypes', [common_1.NgModel, core_1.ElementRef, core_1.Renderer])

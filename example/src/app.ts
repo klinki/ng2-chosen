@@ -1,11 +1,11 @@
 import {CORE_DIRECTIVES} from 'angular2/common';
 import {Component} from 'angular2/core';
-import {ChosenComponent,ChosenOption} from "chosen";
+import {ChosenComponent,ChosenOption,ChosenMultipleComponent,ChosenSingleComponent} from "chosen";
 
 @Component({
     selector: 'app',
     templateUrl: 'app.html',
-    directives: [CORE_DIRECTIVES, ChosenComponent]
+    directives: [CORE_DIRECTIVES, ChosenMultipleComponent,ChosenSingleComponent]
 })
 export class Application {
 

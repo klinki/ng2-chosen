@@ -1,6 +1,6 @@
 {
   "name": "ng2-chosen",
-  "version" : "0.0.2-beta1",
+  "version" : "0.0.2-beta2",
   "description" : "Angular 2 implementation of Chosen",
   "devDependencies": {     
     "bower": "1.6.5",

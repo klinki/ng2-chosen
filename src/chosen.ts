@@ -22,6 +22,7 @@ interface InternalChosenOption extends ChosenOption {
     labelWithMark?:string;
     groupIndex?:number;
     groupObject?:InternalChosenOptionGroup;
+    highlighted?:boolean;
 }
 
 @Component({
@@ -39,9 +40,9 @@ interface InternalChosenOption extends ChosenOption {
                 
                  <li [class.highlighted]="option.highlighted"
                     [class.result-selected]="isOptionSelected(option)"
-                    [class.active-result]="!isOptionSelected(option)"
-                    (mouseover)="!isOptionSelected(option) && option.highlighted = true"
-                    (mouseout)="option.highlighted = false"
+                    [class.active-result]="!isOptionSelected(option) || display_selected_options"
+                    (mouseover)="highlight(option)"
+                    (mouseout)="unHighlight(option)"
                     (mousedown)="selectOption(option)">
                     <span [innerHtml]="getOptionLabel(option)"></span>
                 </li>
@@ -52,7 +53,6 @@ interface InternalChosenOption extends ChosenOption {
 
             <li *ngIf="filterMode && filterResultCount == 0" class="no-results">{{no_results_text}} "<span>{{inputValue}}</span>"</li>
         </ul>
-
     `,
     directives: [CORE_DIRECTIVES, FORM_DIRECTIVES]
 })
@@ -66,12 +66,18 @@ class ChosenDropComponent {
     disable_search_threshold = 0;
     @Input()
     no_results_text;
+
+    @Input()
+    display_selected_options:boolean = false;
+
     @Input()
     filterMode:boolean = false;
 
     options_:Array<InternalChosenOption>;
 
     groups_:Array<InternalChosenOptionGroup>;
+
+    highlightedOption:InternalChosenOption;
 
     @Output()
     optionSelected:EventEmitter<InternalChosenOption> = new EventEmitter();
@@ -91,6 +97,20 @@ class ChosenDropComponent {
     @Input()
     set groups(groups:Array<InternalChosenOptionGroup>) {
         this.groups_ = groups;
+    }
+
+    highlight(option:InternalChosenOption) {
+        if (this.highlightedOption != null) {
+            this.highlightedOption.highlighted = false;
+        }
+        if (!this.isOptionSelected(option) || this.display_selected_options) {
+            option.highlighted = true;
+            this.highlightedOption = option;
+        }
+    }
+
+    unHighlight(option:InternalChosenOption) {
+        option.highlighted = false;
     }
 
     isSearchDisabled() {
@@ -252,6 +272,7 @@ abstract class AbstractChosenComponent<T> extends DefaultValueAccessor {
             this.filterResultCount = 0;
             this.filterMode = false;
         }
+        this.highlightOption();
     }
 
     abstract isOptionSelected(InternalChosenOption):boolean;
@@ -266,10 +287,14 @@ abstract class AbstractChosenComponent<T> extends DefaultValueAccessor {
 
     abstract deselectOption(option:InternalChosenOption, event);
 
+    abstract highlightOption();
+
     chosenFocus() {
         this.chosenContainerActive = true;
         this.chosenWithDrop = true;
+
         this.onChosenFocus();
+        this.highlightOption();
     }
 
     abstract onChosenFocus();
@@ -316,6 +341,7 @@ abstract class AbstractChosenComponent<T> extends DefaultValueAccessor {
             [disable_search]="disable_search"
             [disable_search_threshold]="disable_search_threshold"
             [no_results_text]="no_results_text"
+            [display_selected_options]="true"
             [filterMode]="filterMode"
             [options]="options_" [groups]="groups_"
             (optionSelected)="selectOption($event)"
@@ -408,6 +434,19 @@ export class ChosenSingleComponent extends AbstractChosenComponent<string> {
         this.chosenDropComponentQueryList.first.inputFocus();
     }
 
+    highlightOption() {
+        if (!this.filterMode) {
+            if (this.singleSelectedOption != null) {
+                this.chosenDropComponentQueryList.first.highlight(this.singleSelectedOption);
+            }
+        } else {
+            if (this.options_ != null) {
+                let firstHitOption = this.options_.find((option:InternalChosenOption) => option.hit);
+                this.chosenDropComponentQueryList.first.highlight(firstHitOption);
+            }
+        }
+    }
+
     onChosenBlur() {
 
     }
@@ -445,6 +484,7 @@ export class ChosenSingleComponent extends AbstractChosenComponent<string> {
         <div  class="chosen-drop"
             [disable_search]="true"
             [no_results_text]="no_results_text"
+            [display_selected_options]="false"
             [filterMode]="filterMode"
             [options]="options_" [groups]="groups_"
             (optionSelected)="selectOption($event)"></div>
@@ -472,6 +512,9 @@ export class ChosenMultipleComponent extends AbstractChosenComponent<Array<strin
     protected set groups(groups:Array<ChosenOptionGroup>) {
         super.setGroups(groups);
     }
+
+    @ViewChildren(ChosenDropComponent)
+    chosenDropComponentQueryList;
 
     selectionCount:number = 0;
 
@@ -525,6 +568,15 @@ export class ChosenMultipleComponent extends AbstractChosenComponent<Array<strin
             this.inputValue = this.placeholder_text_multiple;
         } else {
             this.inputValue = null;
+        }
+    }
+
+    highlightOption() {
+        if (this.options_ != null) {
+            let firstNonSelectedOption = this.options_.find((option:InternalChosenOption) => !option.selected && (!this.filterMode || (this.filterMode && option.hit )));
+            if (firstNonSelectedOption != null) {
+                this.chosenDropComponentQueryList.first.highlight(firstNonSelectedOption);
+            }
         }
     }
 }

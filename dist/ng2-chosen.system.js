@@ -30,7 +30,6 @@ System.register("chosen", ['angular2/common', 'angular2/core'], function(exports
                 function ChosenDropComponent() {
                     this.disable_search = false;
                     this.disable_search_threshold = 0;
-                    this.no_results_text = 0;
                     this.filterMode = false;
                     this.optionSelected = new core_1.EventEmitter();
                     this.inputKeyUp = new core_1.EventEmitter();
@@ -39,19 +38,18 @@ System.register("chosen", ['angular2/common', 'angular2/core'], function(exports
                 Object.defineProperty(ChosenDropComponent.prototype, "options", {
                     set: function (options) {
                         this.options_ = options;
-                        console.log(options);
                     },
                     enumerable: true,
                     configurable: true
                 });
-                ChosenDropComponent.prototype.disableSearch = function () {
+                ChosenDropComponent.prototype.isSearchDisabled = function () {
                     return this.disable_search
                         || (this.disable_search_threshold != 0 && this.options_ != null && this.options_.length <= this.disable_search_threshold);
                 };
-                ChosenDropComponent.prototype.showOptionInChosenDrop = function (option) {
+                ChosenDropComponent.prototype.isOptionVisible = function (option) {
                     return !this.filterMode || (this.filterMode && option.hit);
                 };
-                ChosenDropComponent.prototype.optionLabelInChosenDrop = function (option) {
+                ChosenDropComponent.prototype.getOptionLabel = function (option) {
                     if (this.filterMode) {
                         return option.labelWithMark;
                     }
@@ -59,16 +57,16 @@ System.register("chosen", ['angular2/common', 'angular2/core'], function(exports
                         return option.label;
                     }
                 };
-                ChosenDropComponent.prototype.optionSelect = function (option) {
+                ChosenDropComponent.prototype.selectOption = function (option) {
                     this.optionSelected.emit(option);
                 };
                 ChosenDropComponent.prototype.isOptionSelected = function (option) {
                     return option.selected;
                 };
-                ChosenDropComponent.prototype.onInputKeyUp = function (value) {
+                ChosenDropComponent.prototype.onInputKeyup = function (value) {
                     this.inputKeyUp.emit(value);
                 };
-                ChosenDropComponent.prototype.chosenBlur = function () {
+                ChosenDropComponent.prototype.onInputBlur = function () {
                     this.inputValue = null;
                     this.inputBlur.emit(true);
                 };
@@ -119,7 +117,7 @@ System.register("chosen", ['angular2/common', 'angular2/core'], function(exports
                 ChosenDropComponent = __decorate([
                     core_1.Component({
                         selector: 'div.chosen-drop',
-                        template: "\n        <div *ngIf=\"!disableSearch()\" class=\"chosen-search\">\n            <input   (blur)=\"chosenBlur()\" (keyup)=\"onInputKeyUp($event.target.value)\" [(ngModel)]=\"inputValue\" #chosenInput type=\"text\" autocomplete=\"off\" tabindex=\"5\">\n        </div>\n        <ul class=\"chosen-results\">\n            <template ngFor #option [ngForOf]=\"options_\" #i=\"index\">\n                <li *ngIf=\"showOptionInChosenDrop(option)\"\n                    [class.highlighted]=\"option.highlighted\"\n                    [class.result-selected]=\"isOptionSelected(option)\"\n                    [class.active-result]=\"!isOptionSelected(option)\"\n                    (mouseover)=\"!isOptionSelected(option) && option.highlighted = true\"\n                    (mouseout)=\"option.highlighted = false\"\n                    (mousedown)=\"optionSelect(option)\"\n                    data-option-array-index=\"i\">\n                    <span [innerHtml]=\"optionLabelInChosenDrop(option)\"></span>\n                </li>\n            </template>\n\n            <li *ngIf=\"filterMode && filterResultCount == 0\" class=\"no-results\">{{no_results_text}} \"<span>{{inputValue}}</span>\"</li>\n        </ul>\n\n    ",
+                        template: "\n        <div *ngIf=\"!isSearchDisabled()\" class=\"chosen-search\">\n            <input (blur)=\"onInputBlur()\" (keyup)=\"onInputKeyup($event.target.value)\" [(ngModel)]=\"inputValue\" #chosenInput type=\"text\" autocomplete=\"off\" tabindex=\"5\">\n        </div>\n        <ul class=\"chosen-results\">\n            <template ngFor #option [ngForOf]=\"options_\" #i=\"index\">\n                <li *ngIf=\"isOptionVisible(option)\"\n                    [class.highlighted]=\"option.highlighted\"\n                    [class.result-selected]=\"isOptionSelected(option)\"\n                    [class.active-result]=\"!isOptionSelected(option)\"\n                    (mouseover)=\"!isOptionSelected(option) && option.highlighted = true\"\n                    (mouseout)=\"option.highlighted = false\"\n                    (mousedown)=\"selectOption(option)\"\n                    data-option-array-index=\"i\">\n                    <span [innerHtml]=\"getOptionLabel(option)\"></span>\n                </li>\n            </template>\n\n            <li *ngIf=\"filterMode && filterResultCount == 0\" class=\"no-results\">{{no_results_text}} \"<span>{{inputValue}}</span>\"</li>\n        </ul>\n\n    ",
                         directives: [common_1.CORE_DIRECTIVES, common_1.FORM_DIRECTIVES]
                     }), 
                     __metadata('design:paramtypes', [])
@@ -177,6 +175,18 @@ System.register("chosen", ['angular2/common', 'angular2/core'], function(exports
                         this.filterMode = false;
                     }
                 };
+                AbstractChosenComponent.prototype.chosenFocus = function () {
+                    this.chosenContainerActive = true;
+                    this.chosenWithDrop = true;
+                    this.onChosenFocus();
+                };
+                AbstractChosenComponent.prototype.chosenBlur = function () {
+                    this.chosenContainerActive = false;
+                    this.chosenWithDrop = false;
+                    this.filterMode = false;
+                    this.onChosenBlur();
+                };
+                AbstractChosenComponent.NO_RESULTS_TEXT_DEFAULT = "No results match";
                 return AbstractChosenComponent;
             }(common_1.DefaultValueAccessor));
             ChosenSingleComponent = (function (_super) {
@@ -186,12 +196,12 @@ System.register("chosen", ['angular2/common', 'angular2/core'], function(exports
                     this.model = model;
                     this.el = el;
                     this.renderer = renderer;
-                    this.no_results_text = "No results match";
-                    this.max_shown_results = null;
-                    this.placeholder_text_single = "Select an Option";
+                    this.no_results_text = AbstractChosenComponent.NO_RESULTS_TEXT_DEFAULT;
                     this.allow_single_deselect = false;
+                    this.placeholder_text_single = "Select an Option";
                     this.disable_search = false;
                     this.disable_search_threshold = 0;
+                    this.max_shown_results = null;
                 }
                 Object.defineProperty(ChosenSingleComponent.prototype, "options", {
                     set: function (options) {
@@ -202,9 +212,9 @@ System.register("chosen", ['angular2/common', 'angular2/core'], function(exports
                 });
                 ChosenSingleComponent.prototype.updateOptionsWithSelection = function () {
                     if (this.options_ != null && this.initialValue != null) {
+                        var initialValue = this.initialValue;
                         for (var i = 0; i < this.options_.length; i++) {
                             var option = this.options_[i];
-                            var initialValue = this.initialValue;
                             if (initialValue === option.value) {
                                 this.singleSelectedOption = option;
                                 option.selected = true;
@@ -224,7 +234,7 @@ System.register("chosen", ['angular2/common', 'angular2/core'], function(exports
                         this.onChange(this.singleSelectedOption.value);
                     }
                 };
-                ChosenSingleComponent.prototype.optionSelect = function (option) {
+                ChosenSingleComponent.prototype.selectOption = function (option) {
                     if (this.singleSelectedOption != null) {
                         this.singleSelectedOption.selected = false;
                     }
@@ -233,7 +243,7 @@ System.register("chosen", ['angular2/common', 'angular2/core'], function(exports
                     this.updateModel();
                     this.chosenBlur();
                 };
-                ChosenSingleComponent.prototype.optionDeselect = function (option, $event) {
+                ChosenSingleComponent.prototype.deselectOption = function (option, $event) {
                     if ($event != null) {
                         $event.stopPropagation();
                     }
@@ -241,18 +251,10 @@ System.register("chosen", ['angular2/common', 'angular2/core'], function(exports
                     this.singleSelectedOption = null;
                     this.updateModel();
                 };
-                ChosenSingleComponent.prototype.chosenFocus = function (chosenInput) {
+                ChosenSingleComponent.prototype.onChosenFocus = function () {
                     this.chosenDropComponentQuery.first.inputFocus();
-                    if (chosenInput != null) {
-                        chosenInput.focus();
-                    }
-                    this.chosenContainerActive = true;
-                    this.chosenWithDrop = true;
                 };
-                ChosenSingleComponent.prototype.chosenBlur = function () {
-                    this.chosenContainerActive = false;
-                    this.chosenWithDrop = false;
-                    this.filterMode = false;
+                ChosenSingleComponent.prototype.onChosenBlur = function () {
                 };
                 __decorate([
                     core_1.Input(), 
@@ -260,16 +262,12 @@ System.register("chosen", ['angular2/common', 'angular2/core'], function(exports
                 ], ChosenSingleComponent.prototype, "no_results_text", void 0);
                 __decorate([
                     core_1.Input(), 
-                    __metadata('design:type', Object)
-                ], ChosenSingleComponent.prototype, "max_shown_results", void 0);
+                    __metadata('design:type', Boolean)
+                ], ChosenSingleComponent.prototype, "allow_single_deselect", void 0);
                 __decorate([
                     core_1.Input(), 
                     __metadata('design:type', String)
                 ], ChosenSingleComponent.prototype, "placeholder_text_single", void 0);
-                __decorate([
-                    core_1.Input(), 
-                    __metadata('design:type', Boolean)
-                ], ChosenSingleComponent.prototype, "allow_single_deselect", void 0);
                 __decorate([
                     core_1.Input(), 
                     __metadata('design:type', Object)
@@ -279,18 +277,22 @@ System.register("chosen", ['angular2/common', 'angular2/core'], function(exports
                     __metadata('design:type', Number)
                 ], ChosenSingleComponent.prototype, "disable_search_threshold", void 0);
                 __decorate([
-                    core_1.ViewChildren(ChosenDropComponent), 
+                    core_1.Input(), 
                     __metadata('design:type', Object)
-                ], ChosenSingleComponent.prototype, "chosenDropComponentQuery", void 0);
+                ], ChosenSingleComponent.prototype, "max_shown_results", void 0);
                 __decorate([
                     core_1.Input(), 
                     __metadata('design:type', Array), 
                     __metadata('design:paramtypes', [Array])
                 ], ChosenSingleComponent.prototype, "options", null);
+                __decorate([
+                    core_1.ViewChildren(ChosenDropComponent), 
+                    __metadata('design:type', Object)
+                ], ChosenSingleComponent.prototype, "chosenDropComponentQuery", void 0);
                 ChosenSingleComponent = __decorate([
                     core_1.Component({
                         selector: 'chosen-single',
-                        template: "\n\n    <div class=\"chosen-container chosen-container-single\"\n        [class.chosen-container-active]=\"chosenContainerActive\"\n        [class.chosen-with-drop]=\"chosenWithDrop\">\n\n         <a (click)=\"chosenFocus(chosenInput)\"  class=\"chosen-single\"\n               [class.chosen-single-with-deselect]=\"!isSelectionEmpty() && allow_single_deselect\"\n               [class.chosen-default]=\"isSelectionEmpty()\">\n\n                <span [ngSwitch]=\"isSelectionEmpty()\">\n                    <template [ngSwitchWhen]=\"true\">\n                        {{placeholder_text_single}}\n                    </template>\n                    <template [ngSwitchWhen]=\"false\">\n                        {{singleSelectedOption.label}}\n                    </template>\n                </span>\n\n                <abbr *ngIf=\"!isSelectionEmpty() && allow_single_deselect\"\n                    (click)=\"optionDeselect(singleSelectedOption , $event)\" class=\"search-choice-close\">\n                </abbr>\n\n                <div><b></b></div>\n        </a>\n\n        <div class=\"chosen-drop\"\n            [disable_search]=\"disable_search\"\n            [disable_search_threshold]=\"disable_search_threshold\"\n            [no_results_text]=\"no_results_text\"\n            [filterMode]=\"filterMode\"\n            [options]=\"options_\"\n            (optionSelected)=\"optionSelect($event)\"\n            (inputKeyUp)=\"inputKeyUp($event)\"\n            (inputBlur)=\"chosenBlur()\"></div>\n\n    </div>\n\n    ",
+                        template: "\n\n    <div class=\"chosen-container chosen-container-single\"\n        [class.chosen-container-active]=\"chosenContainerActive\"\n        [class.chosen-with-drop]=\"chosenWithDrop\">\n\n         <a (click)=\"chosenFocus(chosenInput)\"  class=\"chosen-single\"\n               [class.chosen-single-with-deselect]=\"!isSelectionEmpty() && allow_single_deselect\"\n               [class.chosen-default]=\"isSelectionEmpty()\">\n\n                <span [ngSwitch]=\"isSelectionEmpty()\">\n                    <template [ngSwitchWhen]=\"true\">\n                        {{placeholder_text_single}}\n                    </template>\n                    <template [ngSwitchWhen]=\"false\">\n                        {{singleSelectedOption.label}}\n                    </template>\n                </span>\n\n                <abbr *ngIf=\"!isSelectionEmpty() && allow_single_deselect\"\n                    (click)=\"deselectOption(singleSelectedOption , $event)\" class=\"search-choice-close\">\n                </abbr>\n\n                <div><b></b></div>\n        </a>\n\n        <div class=\"chosen-drop\"\n            [disable_search]=\"disable_search\"\n            [disable_search_threshold]=\"disable_search_threshold\"\n            [no_results_text]=\"no_results_text\"\n            [filterMode]=\"filterMode\"\n            [options]=\"options_\"\n            (optionSelected)=\"selectOption($event)\"\n            (inputKeyUp)=\"inputKeyUp($event)\"\n            (inputBlur)=\"chosenBlur()\"></div>\n\n    </div>\n\n    ",
                         directives: [common_1.CORE_DIRECTIVES, [ChosenDropComponent]]
                     }), 
                     __metadata('design:paramtypes', [(typeof (_a = typeof common_1.NgModel !== 'undefined' && common_1.NgModel) === 'function' && _a) || Object, (typeof (_b = typeof core_1.ElementRef !== 'undefined' && core_1.ElementRef) === 'function' && _b) || Object, (typeof (_c = typeof core_1.Renderer !== 'undefined' && core_1.Renderer) === 'function' && _c) || Object])
@@ -306,9 +308,10 @@ System.register("chosen", ['angular2/common', 'angular2/core'], function(exports
                     this.model = model;
                     this.el = el;
                     this.renderer = renderer;
-                    this.no_results_text = "No results match";
-                    this.max_shown_results = null;
+                    this.no_results_text = AbstractChosenComponent.NO_RESULTS_TEXT_DEFAULT;
                     this.placeholder_text_multiple = "Select Some Options";
+                    this.max_shown_results = null;
+                    this.selectionCount = 0;
                 }
                 Object.defineProperty(ChosenMultipleComponent.prototype, "options", {
                     set: function (options) {
@@ -318,56 +321,44 @@ System.register("chosen", ['angular2/common', 'angular2/core'], function(exports
                     configurable: true
                 });
                 ChosenMultipleComponent.prototype.updateOptionsWithSelection = function () {
+                    var _this = this;
                     if (this.options_ != null && this.initialValue != null) {
-                        var _loop_1 = function() {
-                            var option = this_1.options_[i];
-                            var initialValue = this_1.initialValue;
-                            if (initialValue.find(function (value) { return value == option.value; }) != null) {
+                        var initialValue_1 = this.initialValue;
+                        this.options_.forEach(function (option) {
+                            if (initialValue_1.find(function (value) { return value == option.value; }) != null) {
                                 option.selected = true;
+                                _this.selectionCount++;
                             }
                             else {
                                 option.selected = false;
                             }
-                        };
-                        var this_1 = this;
-                        for (var i = 0; i < this.options_.length; i++) {
-                            _loop_1();
-                        }
+                        });
                     }
                 };
                 ChosenMultipleComponent.prototype.updateModel = function () {
                     this.onChange(this.options_.filter(function (option) { return option.selected; }).map(function (option) { return option.value; }));
                 };
                 ChosenMultipleComponent.prototype.isSelectionEmpty = function () {
-                    if (this.options_ == null) {
-                        return true;
-                    }
-                    return this.options_.find(function (option) { return option.selected; }) == null;
+                    return this.selectionCount == 0;
                 };
-                ChosenMultipleComponent.prototype.optionSelect = function (option) {
+                ChosenMultipleComponent.prototype.selectOption = function (option) {
                     option.selected = true;
+                    this.selectionCount++;
                     this.updateModel();
                     this.chosenBlur();
                 };
-                ChosenMultipleComponent.prototype.optionDeselect = function (option, $event) {
+                ChosenMultipleComponent.prototype.deselectOption = function (option, $event) {
                     if ($event != null) {
                         $event.stopPropagation();
                     }
                     option.selected = false;
+                    this.selectionCount--;
                     this.updateModel();
                 };
-                ChosenMultipleComponent.prototype.chosenFocus = function (chosenInput) {
-                    if (chosenInput != null) {
-                        chosenInput.focus();
-                    }
-                    this.chosenContainerActive = true;
-                    this.chosenWithDrop = true;
+                ChosenMultipleComponent.prototype.onChosenFocus = function () {
                     this.inputValue = null;
                 };
-                ChosenMultipleComponent.prototype.chosenBlur = function () {
-                    this.chosenContainerActive = false;
-                    this.chosenWithDrop = false;
-                    this.filterMode = false;
+                ChosenMultipleComponent.prototype.onChosenBlur = function () {
                     if (this.isSelectionEmpty()) {
                         this.inputValue = this.placeholder_text_multiple;
                     }
@@ -381,12 +372,12 @@ System.register("chosen", ['angular2/common', 'angular2/core'], function(exports
                 ], ChosenMultipleComponent.prototype, "no_results_text", void 0);
                 __decorate([
                     core_1.Input(), 
-                    __metadata('design:type', Object)
-                ], ChosenMultipleComponent.prototype, "max_shown_results", void 0);
-                __decorate([
-                    core_1.Input(), 
                     __metadata('design:type', String)
                 ], ChosenMultipleComponent.prototype, "placeholder_text_multiple", void 0);
+                __decorate([
+                    core_1.Input(), 
+                    __metadata('design:type', Object)
+                ], ChosenMultipleComponent.prototype, "max_shown_results", void 0);
                 __decorate([
                     core_1.Input(), 
                     __metadata('design:type', Array), 
@@ -395,7 +386,7 @@ System.register("chosen", ['angular2/common', 'angular2/core'], function(exports
                 ChosenMultipleComponent = __decorate([
                     core_1.Component({
                         selector: 'chosen-multiple',
-                        template: "\n\n\n    <div class=\"chosen-container chosen-container-multi\"\n        [class.chosen-container-active]=\"chosenContainerActive\"\n        [class.chosen-with-drop]=\"chosenWithDrop\">\n\n        <ul class=\"chosen-choices\">\n\n                <template [ngIf]=\"options_ != null\">\n                    <template ngFor #option [ngForOf]=\"options_\" #i=\"index\">\n                        <li *ngIf=\"option.selected\" class=\"search-choice\">\n                            <span>{{option.label}}</span>\n                            <a class=\"search-choice-close\" (click)=\"chosenInput.focus();optionDeselect(option, $event);\" data-option-array-index=\"4\"></a>\n                        </li>\n                    </template>\n                </template>\n\n                <li class=\"search-field\">\n                    <input #chosenInput type=\"text\"\n                    [(ngModel)]=\"inputValue\"\n                    [class.default]=\"isSelectionEmpty()\"\n                    (focus)=\"chosenFocus()\"\n                    (blur)=\"chosenBlur()\"\n                    (keyup)=\"inputKeyUp($event.target.value)\"\n                    tabindex=\"i\" autocomplete=\"off\"/>\n                </li>\n        </ul>\n\n        <div  class=\"chosen-drop\"\n            [disable_search]=\"true\"\n            [no_results_text]=\"no_results_text\"\n            [filterMode]=\"filterMode\"\n            [options]=\"options_\"\n            (optionSelected)=\"optionSelect($event)\"></div>\n\n    </div>\n\n    ",
+                        template: "\n    <div class=\"chosen-container chosen-container-multi\"\n        [class.chosen-container-active]=\"chosenContainerActive\"\n        [class.chosen-with-drop]=\"chosenWithDrop\">\n\n        <ul class=\"chosen-choices\">\n\n                <template [ngIf]=\"options_ != null\">\n                    <template ngFor #option [ngForOf]=\"options_\" #i=\"index\">\n                        <li *ngIf=\"option.selected\" class=\"search-choice\">\n                            <span>{{option.label}}</span>\n                            <a class=\"search-choice-close\" (click)=\"chosenInput.focus();deselectOption(option, $event);\" data-option-array-index=\"4\"></a>\n                        </li>\n                    </template>\n                </template>\n\n                <li class=\"search-field\">\n                    <input #chosenInput type=\"text\"\n                    [(ngModel)]=\"inputValue\"\n                    [class.default]=\"isSelectionEmpty()\"\n                    (focus)=\"chosenFocus()\"\n                    (blur)=\"chosenBlur()\"\n                    (keyup)=\"inputKeyUp($event.target.value)\"\n                    tabindex=\"i\" autocomplete=\"off\"/>\n                </li>\n        </ul>\n\n        <div  class=\"chosen-drop\"\n            [disable_search]=\"true\"\n            [no_results_text]=\"no_results_text\"\n            [filterMode]=\"filterMode\"\n            [options]=\"options_\"\n            (optionSelected)=\"selectOption($event)\"></div>\n\n    </div>\n\n    ",
                         directives: [common_1.CORE_DIRECTIVES, [ChosenDropComponent]]
                     }), 
                     __metadata('design:paramtypes', [(typeof (_a = typeof common_1.NgModel !== 'undefined' && common_1.NgModel) === 'function' && _a) || Object, (typeof (_b = typeof core_1.ElementRef !== 'undefined' && core_1.ElementRef) === 'function' && _b) || Object, (typeof (_c = typeof core_1.Renderer !== 'undefined' && core_1.Renderer) === 'function' && _c) || Object])

@@ -1,34 +1,34 @@
-import {CORE_DIRECTIVES,NG_VALUE_ACCESSOR,FORM_DIRECTIVES,DefaultValueAccessor,NgModel} from 'angular2/common';
-import {Component,Input,Output,Host,ViewChildren,ElementRef,Renderer,EventEmitter} from 'angular2/core';
+import {CORE_DIRECTIVES, NG_VALUE_ACCESSOR, FORM_DIRECTIVES, DefaultValueAccessor, NgModel} from 'angular2/common';
+import {Component, Input, Output, Host, ViewChildren, ElementRef, Renderer, EventEmitter} from 'angular2/core';
 
 export interface ChosenOption {
-    value :string,
-    label : string,
+    value:string,
+    label:string,
 }
 
 interface InternalChosenOption extends ChosenOption {
-    selected? : boolean;
-    hit? : boolean;
-    labelWithMark? : string;
+    selected?:boolean;
+    hit?:boolean;
+    labelWithMark?:string;
 }
 
 @Component({
     selector: 'div.chosen-drop',
     template: `
-        <div *ngIf="!disableSearch()" class="chosen-search">
-            <input   (blur)="chosenBlur()" (keyup)="onInputKeyUp($event.target.value)" [(ngModel)]="inputValue" #chosenInput type="text" autocomplete="off" tabindex="5">
+        <div *ngIf="!isSearchDisabled()" class="chosen-search">
+            <input (blur)="onInputBlur()" (keyup)="onInputKeyup($event.target.value)" [(ngModel)]="inputValue" #chosenInput type="text" autocomplete="off" tabindex="5">
         </div>
         <ul class="chosen-results">
             <template ngFor #option [ngForOf]="options_" #i="index">
-                <li *ngIf="showOptionInChosenDrop(option)"
+                <li *ngIf="isOptionVisible(option)"
                     [class.highlighted]="option.highlighted"
                     [class.result-selected]="isOptionSelected(option)"
                     [class.active-result]="!isOptionSelected(option)"
                     (mouseover)="!isOptionSelected(option) && option.highlighted = true"
                     (mouseout)="option.highlighted = false"
-                    (mousedown)="optionSelect(option)"
+                    (mousedown)="selectOption(option)"
                     data-option-array-index="i">
-                    <span [innerHtml]="optionLabelInChosenDrop(option)"></span>
+                    <span [innerHtml]="getOptionLabel(option)"></span>
                 </li>
             </template>
 
@@ -40,18 +40,25 @@ interface InternalChosenOption extends ChosenOption {
 })
 class ChosenDropComponent {
 
-    @Input() disable_search = false;
-    @Input() disable_search_threshold = 0;
-    @Input() no_results_text = 0;
-
-    @Input() filterMode:boolean = false;
-    @Input() options_:Array<InternalChosenOption>;
-
     inputValue:string;
 
-    @Output() optionSelected:EventEmitter<InternalChosenOption> = new EventEmitter();
-    @Output() inputKeyUp:EventEmitter<string> = new EventEmitter();
-    @Output() inputBlur:EventEmitter<boolean> = new EventEmitter();
+    @Input()
+    disable_search = false;
+    @Input()
+    disable_search_threshold = 0;
+    @Input()
+    no_results_text;
+    @Input()
+    filterMode:boolean = false;
+    @Input()
+    options_:Array<InternalChosenOption>;
+
+    @Output()
+    optionSelected:EventEmitter<InternalChosenOption> = new EventEmitter();
+    @Output()
+    inputKeyUp:EventEmitter<string> = new EventEmitter();
+    @Output()
+    inputBlur:EventEmitter<boolean> = new EventEmitter();
 
     @ViewChildren('chosenInput')
     chosenInputQuery;
@@ -59,19 +66,18 @@ class ChosenDropComponent {
     @Input()
     set options(options:Array<ChosenOption>) {
         this.options_ = options;
-        console.log(options);
     }
 
-    disableSearch() {
+    isSearchDisabled() {
         return this.disable_search
             || (this.disable_search_threshold != 0 && this.options_ != null && this.options_.length <= this.disable_search_threshold);
     }
 
-    showOptionInChosenDrop(option):boolean {
+    isOptionVisible(option):boolean {
         return !this.filterMode || (this.filterMode && option.hit);
     }
 
-    optionLabelInChosenDrop(option):string {
+    getOptionLabel(option):string {
         if (this.filterMode) {
             return option.labelWithMark;
         } else {
@@ -79,7 +85,7 @@ class ChosenDropComponent {
         }
     }
 
-    optionSelect(option) {
+    selectOption(option) {
         this.optionSelected.emit(option)
     }
 
@@ -87,11 +93,11 @@ class ChosenDropComponent {
         return option.selected;
     }
 
-    onInputKeyUp(value) {
+    onInputKeyup(value) {
         this.inputKeyUp.emit(value);
     }
 
-    chosenBlur() {
+    onInputBlur() {
         this.inputValue = null;
         this.inputBlur.emit(true);
     }
@@ -102,6 +108,8 @@ class ChosenDropComponent {
 }
 
 abstract class AbstractChosenComponent<T> extends DefaultValueAccessor {
+
+    protected static NO_RESULTS_TEXT_DEFAULT = "No results match";
 
     protected initialValue:T;
 
@@ -164,13 +172,26 @@ abstract class AbstractChosenComponent<T> extends DefaultValueAccessor {
 
     abstract updateModel();
 
-    abstract optionSelect(option:InternalChosenOption)
+    abstract selectOption(option:InternalChosenOption)
 
-    abstract optionDeselect(option:InternalChosenOption, event);
+    abstract deselectOption(option:InternalChosenOption, event);
 
-    abstract chosenFocus(chosenInput);
+    chosenFocus() {
+        this.chosenContainerActive = true;
+        this.chosenWithDrop = true;
+        this.onChosenFocus();
+    }
 
-    abstract chosenBlur();
+    abstract onChosenFocus();
+
+    chosenBlur() {
+        this.chosenContainerActive = false;
+        this.chosenWithDrop = false;
+        this.filterMode = false;
+        this.onChosenBlur();
+    }
+
+    abstract onChosenBlur();
 }
 
 @Component({
@@ -195,7 +216,7 @@ abstract class AbstractChosenComponent<T> extends DefaultValueAccessor {
                 </span>
 
                 <abbr *ngIf="!isSelectionEmpty() && allow_single_deselect"
-                    (click)="optionDeselect(singleSelectedOption , $event)" class="search-choice-close">
+                    (click)="deselectOption(singleSelectedOption , $event)" class="search-choice-close">
                 </abbr>
 
                 <div><b></b></div>
@@ -207,7 +228,7 @@ abstract class AbstractChosenComponent<T> extends DefaultValueAccessor {
             [no_results_text]="no_results_text"
             [filterMode]="filterMode"
             [options]="options_"
-            (optionSelected)="optionSelect($event)"
+            (optionSelected)="selectOption($event)"
             (inputKeyUp)="inputKeyUp($event)"
             (inputBlur)="chosenBlur()"></div>
 
@@ -218,32 +239,38 @@ abstract class AbstractChosenComponent<T> extends DefaultValueAccessor {
 })
 export class ChosenSingleComponent extends AbstractChosenComponent<string> {
 
-    @Input() public no_results_text = "No results match";
-    @Input() public max_shown_results = null;
-
-    @Input() placeholder_text_single:string = "Select an Option";
-    @Input() allow_single_deselect:boolean = false;
-    @Input() disable_search = false;
-    @Input() disable_search_threshold:number = 0;
-
     singleSelectedOption:InternalChosenOption;
 
-    @ViewChildren(ChosenDropComponent) chosenDropComponentQuery;
-
-    constructor(private model:NgModel, private el:ElementRef, private renderer:Renderer) {
-        super(model, el, renderer);
-    }
+    @Input()
+    no_results_text = AbstractChosenComponent.NO_RESULTS_TEXT_DEFAULT;
+    @Input()
+    allow_single_deselect:boolean = false;
+    @Input()
+    placeholder_text_single:string = "Select an Option";
+    @Input()
+    disable_search = false;
+    @Input()
+    disable_search_threshold:number = 0;
+    @Input()
+    max_shown_results = null;
 
     @Input()
     protected set options(options:Array<ChosenOption>) {
         super.setOptions(options);
     }
 
+    @ViewChildren(ChosenDropComponent)
+    chosenDropComponentQuery;
+
+    constructor(private model:NgModel, private el:ElementRef, private renderer:Renderer) {
+        super(model, el, renderer);
+    }
+
     updateOptionsWithSelection() {
         if (this.options_ != null && this.initialValue != null) {
+            let initialValue = <string>this.initialValue;
             for (var i = 0; i < this.options_.length; i++) {
                 let option = this.options_[i];
-                let initialValue = <string>this.initialValue;
                 if (initialValue === option.value) {
                     this.singleSelectedOption = option;
                     option.selected = true;
@@ -265,7 +292,7 @@ export class ChosenSingleComponent extends AbstractChosenComponent<string> {
         }
     }
 
-    optionSelect(option) {
+    selectOption(option) {
         if (this.singleSelectedOption != null) {
             this.singleSelectedOption.selected = false;
         }
@@ -277,7 +304,7 @@ export class ChosenSingleComponent extends AbstractChosenComponent<string> {
         this.chosenBlur();
     }
 
-    optionDeselect(option, $event) {
+    deselectOption(option, $event) {
         if ($event != null) {
             $event.stopPropagation();
         }
@@ -286,29 +313,18 @@ export class ChosenSingleComponent extends AbstractChosenComponent<string> {
         this.updateModel();
     }
 
-    chosenFocus(chosenInput) {
-
+    onChosenFocus() {
         this.chosenDropComponentQuery.first.inputFocus();
-
-        if (chosenInput != null) {
-            chosenInput.focus();
-        }
-        this.chosenContainerActive = true;
-        this.chosenWithDrop = true;
     }
 
-    chosenBlur() {
-        this.chosenContainerActive = false;
-        this.chosenWithDrop = false;
-        this.filterMode = false;
+    onChosenBlur() {
+
     }
 }
 
 @Component({
     selector: 'chosen-multiple',
     template: `
-
-
     <div class="chosen-container chosen-container-multi"
         [class.chosen-container-active]="chosenContainerActive"
         [class.chosen-with-drop]="chosenWithDrop">
@@ -319,7 +335,7 @@ export class ChosenSingleComponent extends AbstractChosenComponent<string> {
                     <template ngFor #option [ngForOf]="options_" #i="index">
                         <li *ngIf="option.selected" class="search-choice">
                             <span>{{option.label}}</span>
-                            <a class="search-choice-close" (click)="chosenInput.focus();optionDeselect(option, $event);" data-option-array-index="4"></a>
+                            <a class="search-choice-close" (click)="chosenInput.focus();deselectOption(option, $event);" data-option-array-index="4"></a>
                         </li>
                     </template>
                 </template>
@@ -340,7 +356,7 @@ export class ChosenSingleComponent extends AbstractChosenComponent<string> {
             [no_results_text]="no_results_text"
             [filterMode]="filterMode"
             [options]="options_"
-            (optionSelected)="optionSelect($event)"></div>
+            (optionSelected)="selectOption($event)"></div>
 
     </div>
 
@@ -349,31 +365,35 @@ export class ChosenSingleComponent extends AbstractChosenComponent<string> {
 })
 export class ChosenMultipleComponent extends AbstractChosenComponent<Array<string>> {
 
-    @Input() public no_results_text = "No results match";
-    @Input() public max_shown_results = null;
-
-    @Input() placeholder_text_multiple:string = "Select Some Options";
-
-    constructor(private model:NgModel, private el:ElementRef, private renderer:Renderer) {
-        super(model, el, renderer);
-    }
+    @Input()
+    no_results_text = AbstractChosenComponent.NO_RESULTS_TEXT_DEFAULT;
+    @Input()
+    placeholder_text_multiple:string = "Select Some Options";
+    @Input()
+    max_shown_results = null;
 
     @Input()
     protected set options(options:Array<ChosenOption>) {
         super.setOptions(options);
     }
 
+    selectionCount:number = 0;
+
+    constructor(private model:NgModel, private el:ElementRef, private renderer:Renderer) {
+        super(model, el, renderer);
+    }
+
     updateOptionsWithSelection() {
         if (this.options_ != null && this.initialValue != null) {
-            for (var i = 0; i < this.options_.length; i++) {
-                let option = this.options_[i];
-                let initialValue = <Array<string>>this.initialValue;
+            let initialValue = <Array<string>>this.initialValue;
+            this.options_.forEach(option => {
                 if (initialValue.find(value => value == option.value) != null) {
                     option.selected = true;
+                    this.selectionCount++;
                 } else {
                     option.selected = false;
                 }
-            }
+            })
         }
     }
 
@@ -382,41 +402,30 @@ export class ChosenMultipleComponent extends AbstractChosenComponent<Array<strin
     }
 
     isSelectionEmpty():boolean {
-        if (this.options_ == null) {
-            return true;
-        }
-        return this.options_.find(option => option.selected) == null;
+        return this.selectionCount == 0;
     }
 
-    optionSelect(option) {
+    selectOption(option) {
         option.selected = true;
+        this.selectionCount++;
         this.updateModel();
         this.chosenBlur();
     }
 
-    optionDeselect(option, $event) {
+    deselectOption(option, $event) {
         if ($event != null) {
             $event.stopPropagation();
         }
         option.selected = false;
+        this.selectionCount--;
         this.updateModel();
     }
 
-    chosenFocus(chosenInput) {
-        if (chosenInput != null) {
-            chosenInput.focus();
-        }
-        this.chosenContainerActive = true;
-        this.chosenWithDrop = true;
-
+    onChosenFocus() {
         this.inputValue = null;
     }
 
-    chosenBlur() {
-        this.chosenContainerActive = false;
-        this.chosenWithDrop = false;
-        this.filterMode = false;
-
+    onChosenBlur() {
         if (this.isSelectionEmpty()) {
             this.inputValue = this.placeholder_text_multiple;
         } else {

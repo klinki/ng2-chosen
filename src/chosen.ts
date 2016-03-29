@@ -6,7 +6,7 @@ export interface ChosenOptionGroup {
     label:string,
 }
 
-export interface InternalChosenOptionGroup extends ChosenOptionGroup {
+interface InternalChosenOptionGroup extends ChosenOptionGroup {
     index:number;
 }
 
@@ -442,7 +442,9 @@ export class ChosenSingleComponent extends AbstractChosenComponent<string> {
         } else {
             if (this.options_ != null) {
                 let firstHitOption = this.options_.find((option:InternalChosenOption) => option.hit);
-                this.chosenDropComponentQueryList.first.highlight(firstHitOption);
+                if (firstHitOption != null) {
+                    this.chosenDropComponentQueryList.first.highlight(firstHitOption);
+                }
             }
         }
     }

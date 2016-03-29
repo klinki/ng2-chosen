@@ -344,7 +344,9 @@ var ChosenSingleComponent = (function (_super) {
         else {
             if (this.options_ != null) {
                 var firstHitOption = this.options_.find(function (option) { return option.hit; });
-                this.chosenDropComponentQueryList.first.highlight(firstHitOption);
+                if (firstHitOption != null) {
+                    this.chosenDropComponentQueryList.first.highlight(firstHitOption);
+                }
             }
         }
     };

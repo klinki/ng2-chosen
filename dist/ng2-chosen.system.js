@@ -356,7 +356,9 @@ System.register("chosen", ['angular2/common', 'angular2/core'], function(exports
                     else {
                         if (this.options_ != null) {
                             var firstHitOption = this.options_.find(function (option) { return option.hit; });
-                            this.chosenDropComponentQueryList.first.highlight(firstHitOption);
+                            if (firstHitOption != null) {
+                                this.chosenDropComponentQueryList.first.highlight(firstHitOption);
+                            }
                         }
                     }
                 };

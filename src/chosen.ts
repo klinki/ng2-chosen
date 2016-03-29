@@ -1,35 +1,53 @@
 import {CORE_DIRECTIVES, NG_VALUE_ACCESSOR, FORM_DIRECTIVES, DefaultValueAccessor, NgModel} from 'angular2/common';
 import {Component, Input, Output, Host, ViewChildren, ElementRef, Renderer, EventEmitter} from 'angular2/core';
 
+export interface ChosenOptionGroup {
+    value:string,
+    label:string,
+}
+
+export interface InternalChosenOptionGroup extends ChosenOptionGroup {
+    index:number;
+}
+
 export interface ChosenOption {
     value:string,
     label:string,
+    group?:string;
 }
 
 interface InternalChosenOption extends ChosenOption {
     selected?:boolean;
     hit?:boolean;
     labelWithMark?:string;
+    groupIndex?:number;
+    groupObject?:InternalChosenOptionGroup;
 }
 
 @Component({
     selector: 'div.chosen-drop',
     template: `
         <div *ngIf="!isSearchDisabled()" class="chosen-search">
-            <input (blur)="onInputBlur()" (keyup)="onInputKeyup($event.target.value)" [(ngModel)]="inputValue" #chosenInput type="text" autocomplete="off" tabindex="5">
+            <input (blur)="onInputBlur()" (keyup)="onInputKeyup($event.target.value)" [(ngModel)]="inputValue" #chosenInput type="text" autocomplete="off">
         </div>
         <ul class="chosen-results">
             <template ngFor #option [ngForOf]="options_" #i="index">
-                <li *ngIf="isOptionVisible(option)"
-                    [class.highlighted]="option.highlighted"
+            
+                <template [ngIf]="isOptionVisible(option)">
+                
+                 <li *ngIf="showGroup(option,i)" class="group-result">{{option.groupObject.label}}</li>
+                
+                 <li [class.highlighted]="option.highlighted"
                     [class.result-selected]="isOptionSelected(option)"
                     [class.active-result]="!isOptionSelected(option)"
                     (mouseover)="!isOptionSelected(option) && option.highlighted = true"
                     (mouseout)="option.highlighted = false"
-                    (mousedown)="selectOption(option)"
-                    data-option-array-index="i">
+                    (mousedown)="selectOption(option)">
                     <span [innerHtml]="getOptionLabel(option)"></span>
                 </li>
+                
+                </template>
+     
             </template>
 
             <li *ngIf="filterMode && filterResultCount == 0" class="no-results">{{no_results_text}} "<span>{{inputValue}}</span>"</li>
@@ -50,8 +68,10 @@ class ChosenDropComponent {
     no_results_text;
     @Input()
     filterMode:boolean = false;
-    @Input()
+
     options_:Array<InternalChosenOption>;
+
+    groups_:Array<InternalChosenOptionGroup>;
 
     @Output()
     optionSelected:EventEmitter<InternalChosenOption> = new EventEmitter();
@@ -61,11 +81,16 @@ class ChosenDropComponent {
     inputBlur:EventEmitter<boolean> = new EventEmitter();
 
     @ViewChildren('chosenInput')
-    chosenInputQuery;
+    chosenInputQueryList;
 
     @Input()
-    set options(options:Array<ChosenOption>) {
+    set options(options:Array<InternalChosenOption>) {
         this.options_ = options;
+    }
+
+    @Input()
+    set groups(groups:Array<InternalChosenOptionGroup>) {
+        this.groups_ = groups;
     }
 
     isSearchDisabled() {
@@ -103,7 +128,28 @@ class ChosenDropComponent {
     }
 
     inputFocus() {
-        this.chosenInputQuery.first.nativeElement.focus();
+        this.chosenInputQueryList.first.nativeElement.focus();
+    }
+
+    showGroup(option:InternalChosenOption, i:number) {
+        if (option.group != null && option.groupObject != null) {
+            if (i == 0) {
+                return true;
+            } else {
+                if (this.filterMode) {
+                    for (let j = i - 1; j > 0; j--) {
+                        if (this.options_[j].hit) {
+                            return this.options_[j].group != option.group;
+                        }
+                    }
+                    return true;
+                } else {
+                    return this.options_[i - 1].group != option.group;
+                }
+            }
+        } else {
+            return false;
+        }
     }
 }
 
@@ -114,6 +160,8 @@ abstract class AbstractChosenComponent<T> extends DefaultValueAccessor {
     protected initialValue:T;
 
     public options_:Array<InternalChosenOption>;
+
+    groups_:Array<InternalChosenOptionGroup>;
 
     public chosenContainerActive:boolean = false;
     public chosenWithDrop:boolean = false;
@@ -131,20 +179,61 @@ abstract class AbstractChosenComponent<T> extends DefaultValueAccessor {
     protected setOptions(options:Array<ChosenOption>) {
         if (options != null) {
             this.options_ = options.map(option=> {
-                return {value: option.value, label: option.label, selected: false, hit: false};
+                return {value: option.value, label: option.label, selected: false, hit: false, group: option.group};
             });
-            this.updateOptionsWithSelection();
+            this.updateOptions();
+        }
+    }
+
+    protected setGroups(groups:Array<ChosenOptionGroup>) {
+        if (groups != null) {
+            this.groups_ = [];
+            for (let i = 0; i < groups.length; i++) {
+                let group:ChosenOptionGroup = groups[i];
+                this.groups_.push({value: group.value, label: group.label, index: i});
+                this.updateOptions();
+            }
         }
     }
 
     writeValue(value:T):void {
         if (value != null) {
             this.initialValue = value;
-            this.updateOptionsWithSelection();
+            this.updateOptions();
         }
     }
 
-    protected  inputKeyUp(inputValue) {
+    protected updateOptions() {
+        if (this.options_ != null) {
+            if (this.initialValue != null) {
+                let initialSelection:Array<InternalChosenOption> = [];
+                this.options_.forEach((option:InternalChosenOption) => {
+                    if (this.isOptionSelected(option)) {
+                        option.selected = true;
+                        initialSelection.push(option);
+                    } else {
+                        option.selected = false;
+                    }
+                })
+                this.initialSelection(initialSelection);
+            }
+
+            if (this.groups_ != null) {
+                this.options_.forEach((option:InternalChosenOption) => {
+                    if (option.group != null) {
+                        let optionGroup:InternalChosenOptionGroup = this.groups_.find(group => group.value == option.group);
+                        option.groupIndex = optionGroup.index;
+                        option.groupObject = optionGroup;
+                    } else {
+                        option.groupIndex = -1;
+                    }
+                })
+                this.options_.sort((a:InternalChosenOption, b:InternalChosenOption) => a.groupIndex - b.groupIndex);
+            }
+        }
+    }
+
+    protected inputKeyUp(inputValue) {
         if (inputValue.trim().length > 0) {
             this.filterResultCount = 0;
             this.options_.forEach((option:InternalChosenOption) => {
@@ -156,7 +245,6 @@ abstract class AbstractChosenComponent<T> extends DefaultValueAccessor {
                     this.filterResultCount++;
                 } else {
                     option.hit = false;
-
                 }
             });
             this.filterMode = true;
@@ -166,7 +254,9 @@ abstract class AbstractChosenComponent<T> extends DefaultValueAccessor {
         }
     }
 
-    abstract updateOptionsWithSelection();
+    abstract isOptionSelected(InternalChosenOption):boolean;
+
+    abstract initialSelection(initialSelection:Array<InternalChosenOption>);
 
     abstract isSelectionEmpty():boolean;
 
@@ -227,7 +317,7 @@ abstract class AbstractChosenComponent<T> extends DefaultValueAccessor {
             [disable_search_threshold]="disable_search_threshold"
             [no_results_text]="no_results_text"
             [filterMode]="filterMode"
-            [options]="options_"
+            [options]="options_" [groups]="groups_"
             (optionSelected)="selectOption($event)"
             (inputKeyUp)="inputKeyUp($event)"
             (inputBlur)="chosenBlur()"></div>
@@ -259,24 +349,25 @@ export class ChosenSingleComponent extends AbstractChosenComponent<string> {
         super.setOptions(options);
     }
 
+    @Input()
+    protected set groups(groups:Array<ChosenOptionGroup>) {
+        super.setGroups(groups);
+    }
+
     @ViewChildren(ChosenDropComponent)
-    chosenDropComponentQuery;
+    chosenDropComponentQueryList;
 
     constructor(private model:NgModel, private el:ElementRef, private renderer:Renderer) {
         super(model, el, renderer);
     }
 
-    updateOptionsWithSelection() {
-        if (this.options_ != null && this.initialValue != null) {
-            let initialValue = <string>this.initialValue;
-            for (var i = 0; i < this.options_.length; i++) {
-                let option = this.options_[i];
-                if (initialValue === option.value) {
-                    this.singleSelectedOption = option;
-                    option.selected = true;
-                    break;
-                }
-            }
+    isOptionSelected(option:InternalChosenOption):boolean {
+        return this.initialValue == option.value;
+    }
+
+    initialSelection(initialSelection:Array<InternalChosenOption>) {
+        if (initialSelection != null && initialSelection.length > 0) {
+            this.singleSelectedOption = initialSelection[0];
         }
     }
 
@@ -314,7 +405,7 @@ export class ChosenSingleComponent extends AbstractChosenComponent<string> {
     }
 
     onChosenFocus() {
-        this.chosenDropComponentQuery.first.inputFocus();
+        this.chosenDropComponentQueryList.first.inputFocus();
     }
 
     onChosenBlur() {
@@ -335,7 +426,7 @@ export class ChosenSingleComponent extends AbstractChosenComponent<string> {
                     <template ngFor #option [ngForOf]="options_" #i="index">
                         <li *ngIf="option.selected" class="search-choice">
                             <span>{{option.label}}</span>
-                            <a class="search-choice-close" (click)="chosenInput.focus();deselectOption(option, $event);" data-option-array-index="4"></a>
+                            <a class="search-choice-close" (click)="chosenInput.focus();deselectOption(option, $event);"></a>
                         </li>
                     </template>
                 </template>
@@ -347,7 +438,7 @@ export class ChosenSingleComponent extends AbstractChosenComponent<string> {
                     (focus)="chosenFocus()"
                     (blur)="chosenBlur()"
                     (keyup)="inputKeyUp($event.target.value)"
-                    tabindex="i" autocomplete="off"/>
+                    autocomplete="off"/>
                 </li>
         </ul>
 
@@ -355,7 +446,7 @@ export class ChosenSingleComponent extends AbstractChosenComponent<string> {
             [disable_search]="true"
             [no_results_text]="no_results_text"
             [filterMode]="filterMode"
-            [options]="options_"
+            [options]="options_" [groups]="groups_"
             (optionSelected)="selectOption($event)"></div>
 
     </div>
@@ -377,28 +468,32 @@ export class ChosenMultipleComponent extends AbstractChosenComponent<Array<strin
         super.setOptions(options);
     }
 
+    @Input()
+    protected set groups(groups:Array<ChosenOptionGroup>) {
+        super.setGroups(groups);
+    }
+
     selectionCount:number = 0;
 
     constructor(private model:NgModel, private el:ElementRef, private renderer:Renderer) {
         super(model, el, renderer);
     }
 
-    updateOptionsWithSelection() {
-        if (this.options_ != null && this.initialValue != null) {
-            let initialValue = <Array<string>>this.initialValue;
-            this.options_.forEach(option => {
-                if (initialValue.find(value => value == option.value) != null) {
-                    option.selected = true;
-                    this.selectionCount++;
-                } else {
-                    option.selected = false;
-                }
-            })
-        }
-    }
-
     updateModel() {
         this.onChange(this.options_.filter(option => option.selected).map(option => option.value));
+    }
+
+    isOptionSelected(option:InternalChosenOption):boolean {
+        if (this.initialValue == null) {
+            return false;
+        }
+        return this.initialValue.find(value => value == option.value) != null;
+    }
+
+    initialSelection(initialSelection:Array<InternalChosenOption>) {
+        if (initialSelection != null) {
+            this.selectionCount == initialSelection.length
+        }
     }
 
     isSelectionEmpty():boolean {

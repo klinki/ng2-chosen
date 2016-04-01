@@ -46,7 +46,6 @@ gulp.task('css', function () {
     return gulp.src(PATHS.src.css).pipe(gulp.dest('dist'));
 });
 
-
 gulp.task('libs', function () {
     return gulp.src(PATHS.lib)
         .pipe(gulp.dest('dist/lib'));

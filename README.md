@@ -1,4 +1,4 @@
-# ng2-angular
+# ng2-chosen
 
 An angular2 implementation of Chosen ( Not a wrapper )
 

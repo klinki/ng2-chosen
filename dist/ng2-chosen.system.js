@@ -216,8 +216,12 @@ System.register("chosen", ['angular2/common', 'angular2/core'], function(exports
                         if (this.initialValue != null) {
                             var initialSelection_1 = [];
                             this.options_.forEach(function (option) {
-                                if (_this.isOptionSelected(option)) {
+                                if (_this.isOptionInitiallySelected(option)) {
                                     initialSelection_1.push(option);
+                                    option.selected = true;
+                                }
+                                else {
+                                    option.selected = false;
                                 }
                             });
                             this.initialSelection(initialSelection_1);
@@ -315,7 +319,7 @@ System.register("chosen", ['angular2/common', 'angular2/core'], function(exports
                 ChosenSingleComponent.prototype.ngAfterViewInit = function () {
                     this.chosenDropComponent = this.chosenDropComponentQueryList.first;
                 };
-                ChosenSingleComponent.prototype.isOptionSelected = function (option) {
+                ChosenSingleComponent.prototype.isOptionInitiallySelected = function (option) {
                     return this.initialValue == option.value;
                 };
                 ChosenSingleComponent.prototype.initialSelection = function (initialSelection) {
@@ -336,6 +340,7 @@ System.register("chosen", ['angular2/common', 'angular2/core'], function(exports
                 };
                 ChosenSingleComponent.prototype.selectOption = function (option) {
                     this.singleSelectedOption = option;
+                    option.selected = true;
                     this.updateModel();
                     this.chosenBlur();
                 };
@@ -343,6 +348,7 @@ System.register("chosen", ['angular2/common', 'angular2/core'], function(exports
                     if ($event != null) {
                         $event.stopPropagation();
                     }
+                    option.selected = false;
                     this.chosenDropComponentQueryList.first.unHighlight(option);
                     this.singleSelectedOption = null;
                     this.updateModel();
@@ -404,7 +410,7 @@ System.register("chosen", ['angular2/common', 'angular2/core'], function(exports
                 ], ChosenSingleComponent.prototype, "groups", null);
                 __decorate([
                     core_1.ViewChildren(ChosenDropComponent), 
-                    __metadata('design:type', Object)
+                    __metadata('design:type', (typeof (_a = typeof core_1.QueryList !== 'undefined' && core_1.QueryList) === 'function' && _a) || Object)
                 ], ChosenSingleComponent.prototype, "chosenDropComponentQueryList", void 0);
                 ChosenSingleComponent = __decorate([
                     core_1.Component({
@@ -412,10 +418,10 @@ System.register("chosen", ['angular2/common', 'angular2/core'], function(exports
                         template: "\n    <div class=\"chosen-container chosen-container-single\"\n        [class.chosen-container-active]=\"chosenContainerActive\"\n        [class.chosen-with-drop]=\"chosenWithDrop\">\n\n         <a (click)=\"chosenFocus(chosenInput)\"  class=\"chosen-single\"\n               [class.chosen-single-with-deselect]=\"!isSelectionEmpty() && allow_single_deselect\"\n               [class.chosen-default]=\"isSelectionEmpty()\">\n\n                <span [ngSwitch]=\"isSelectionEmpty()\">\n                    <template [ngSwitchWhen]=\"true\">\n                        {{placeholder_text_single}}\n                    </template>\n                    <template [ngSwitchWhen]=\"false\">\n                        {{singleSelectedOption.label}}\n                    </template>\n                </span>\n                <abbr *ngIf=\"!isSelectionEmpty() && allow_single_deselect\"\n                    (click)=\"deselectOption(singleSelectedOption , $event)\" class=\"search-choice-close\">\n                </abbr>\n                <div><b></b></div>\n        </a>\n\n        <div class=\"chosen-drop\"\n            [disable_search]=\"disable_search\"\n            [disable_search_threshold]=\"disable_search_threshold\"\n            [no_results_text]=\"no_results_text\"\n            [display_selected_options]=\"true\"\n            [filterMode]=\"filterMode\"\n            [options]=\"options_\" [groups]=\"groups_\"\n            (optionSelected)=\"selectOption($event)\"\n            (inputKeyUp)=\"inputKeyUp($event)\"\n            (inputBlur)=\"chosenBlur()\"></div>\n    </div>",
                         directives: [common_1.CORE_DIRECTIVES, [ChosenDropComponent]]
                     }), 
-                    __metadata('design:paramtypes', [(typeof (_a = typeof common_1.NgModel !== 'undefined' && common_1.NgModel) === 'function' && _a) || Object, (typeof (_b = typeof core_1.ElementRef !== 'undefined' && core_1.ElementRef) === 'function' && _b) || Object, (typeof (_c = typeof core_1.Renderer !== 'undefined' && core_1.Renderer) === 'function' && _c) || Object])
+                    __metadata('design:paramtypes', [(typeof (_b = typeof common_1.NgModel !== 'undefined' && common_1.NgModel) === 'function' && _b) || Object, (typeof (_c = typeof core_1.ElementRef !== 'undefined' && core_1.ElementRef) === 'function' && _c) || Object, (typeof (_d = typeof core_1.Renderer !== 'undefined' && core_1.Renderer) === 'function' && _d) || Object])
                 ], ChosenSingleComponent);
                 return ChosenSingleComponent;
-                var _a, _b, _c;
+                var _a, _b, _c, _d;
             }(AbstractChosenComponent));
             exports_1("ChosenSingleComponent", ChosenSingleComponent);
             ChosenMultipleComponent = (function (_super) {
@@ -459,7 +465,7 @@ System.register("chosen", ['angular2/common', 'angular2/core'], function(exports
                         this.onChange(null);
                     }
                 };
-                ChosenMultipleComponent.prototype.isOptionSelected = function (option) {
+                ChosenMultipleComponent.prototype.isOptionInitiallySelected = function (option) {
                     if (this.initialValue == null) {
                         return false;
                     }
@@ -479,6 +485,7 @@ System.register("chosen", ['angular2/common', 'angular2/core'], function(exports
                     if (this.multipleSelectedOptions == null) {
                         this.multipleSelectedOptions = [];
                     }
+                    option.selected = true;
                     this.multipleSelectedOptions.push(option);
                     this.selectionCount++;
                     if (this.max_selected_options != null && this.selectionCount == this.max_selected_options) {
@@ -491,7 +498,10 @@ System.register("chosen", ['angular2/common', 'angular2/core'], function(exports
                     if ($event != null) {
                         $event.stopPropagation();
                     }
+                    option.selected = false;
+                    console.log(this.multipleSelectedOptions.length);
                     this.multipleSelectedOptions = this.multipleSelectedOptions.filter(function (option_) { return option_ != option; });
+                    console.log(this.multipleSelectedOptions.length);
                     this.selectionCount--;
                     this.updateModel();
                 };
@@ -569,18 +579,18 @@ System.register("chosen", ['angular2/common', 'angular2/core'], function(exports
                 ], ChosenMultipleComponent.prototype, "maxselected", void 0);
                 __decorate([
                     core_1.ViewChildren(ChosenDropComponent), 
-                    __metadata('design:type', Object)
+                    __metadata('design:type', (typeof (_b = typeof core_1.QueryList !== 'undefined' && core_1.QueryList) === 'function' && _b) || Object)
                 ], ChosenMultipleComponent.prototype, "chosenDropComponentQueryList", void 0);
                 ChosenMultipleComponent = __decorate([
                     core_1.Component({
                         selector: 'chosen-multiple',
-                        template: "\n    <div class=\"chosen-container chosen-container-multi\"\n        [class.chosen-container-active]=\"chosenContainerActive\"\n        [class.chosen-with-drop]=\"chosenWithDrop\">\n\n        <ul class=\"chosen-choices\">\n\n                <template [ngIf]=\"options_ != null\">\n                    <template ngFor #option [ngForOf]=\"multipleSelectedOptions\" #i=\"index\">\n                        <li class=\"search-choice\">\n                            <span>{{option.label}}</span>\n                            <a class=\"search-choice-close\" (click)=\"chosenInput.focus();deselectOption(option, $event);\"></a>\n                        </li>\n                    </template>\n                </template>\n\n                <li class=\"search-field\">\n                    <input #chosenInput type=\"text\"\n                    [(ngModel)]=\"inputValue\"\n                    [class.default]=\"isSelectionEmpty()\"\n                    (focus)=\"chosenFocus()\"\n                    (blur)=\"chosenBlur()\"\n                    (keyup)=\"multipleInputKeyUp($event)\"\n                    autocomplete=\"off\"/>\n                </li>\n        </ul>\n\n        <div  class=\"chosen-drop\"\n            [disable_search]=\"true\"\n            [no_results_text]=\"no_results_text\"\n            [display_selected_options]=\"false\"\n            [filterMode]=\"filterMode\"\n            [options]=\"options_\" [groups]=\"groups_\"\n            (optionSelected)=\"selectOption($event)\"></div>\n\n    </div>\n    ",
+                        template: "\n    <div class=\"chosen-container chosen-container-multi\"\n        [class.chosen-container-active]=\"chosenContainerActive\"\n        [class.chosen-with-drop]=\"chosenWithDrop\">\n\n        <ul class=\"chosen-choices\">\n\n                <template [ngIf]=\"multipleSelectedOptions != null\">\n                    <template ngFor #option [ngForOf]=\"multipleSelectedOptions\" #i=\"index\">\n                        <li class=\"search-choice\">\n                            <span>{{option.label}}</span>\n                            <a class=\"search-choice-close\" (click)=\"deselectOption(option, $event);\"></a>\n                        </li>\n                    </template>\n                </template>\n\n                <li class=\"search-field\">\n                    <input #chosenInput type=\"text\"\n                    [(ngModel)]=\"inputValue\"\n                    [class.default]=\"isSelectionEmpty()\"\n                    (click)=\"chosenFocus()\"\n                    (blur)=\"chosenBlur()\"\n                    (keyup)=\"multipleInputKeyUp($event)\"\n                    autocomplete=\"off\"/>\n                </li>\n        </ul>\n\n        <div  class=\"chosen-drop\"\n            [disable_search]=\"true\"\n            [no_results_text]=\"no_results_text\"\n            [display_selected_options]=\"false\"\n            [filterMode]=\"filterMode\"\n            [options]=\"options_\" [groups]=\"groups_\"\n            (optionSelected)=\"selectOption($event)\"></div>\n\n    </div>\n    ",
                         directives: [common_1.CORE_DIRECTIVES, [ChosenDropComponent]]
                     }), 
-                    __metadata('design:paramtypes', [(typeof (_b = typeof common_1.NgModel !== 'undefined' && common_1.NgModel) === 'function' && _b) || Object, (typeof (_c = typeof core_1.ElementRef !== 'undefined' && core_1.ElementRef) === 'function' && _c) || Object, (typeof (_d = typeof core_1.Renderer !== 'undefined' && core_1.Renderer) === 'function' && _d) || Object])
+                    __metadata('design:paramtypes', [(typeof (_c = typeof common_1.NgModel !== 'undefined' && common_1.NgModel) === 'function' && _c) || Object, (typeof (_d = typeof core_1.ElementRef !== 'undefined' && core_1.ElementRef) === 'function' && _d) || Object, (typeof (_e = typeof core_1.Renderer !== 'undefined' && core_1.Renderer) === 'function' && _e) || Object])
                 ], ChosenMultipleComponent);
                 return ChosenMultipleComponent;
-                var _a, _b, _c, _d;
+                var _a, _b, _c, _d, _e;
             }(AbstractChosenComponent));
             exports_1("ChosenMultipleComponent", ChosenMultipleComponent);
         }

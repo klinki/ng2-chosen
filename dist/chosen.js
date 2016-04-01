@@ -204,8 +204,12 @@ var AbstractChosenComponent = (function (_super) {
             if (this.initialValue != null) {
                 var initialSelection_1 = [];
                 this.options_.forEach(function (option) {
-                    if (_this.isOptionSelected(option)) {
+                    if (_this.isOptionInitiallySelected(option)) {
                         initialSelection_1.push(option);
+                        option.selected = true;
+                    }
+                    else {
+                        option.selected = false;
                     }
                 });
                 this.initialSelection(initialSelection_1);
@@ -303,7 +307,7 @@ var ChosenSingleComponent = (function (_super) {
     ChosenSingleComponent.prototype.ngAfterViewInit = function () {
         this.chosenDropComponent = this.chosenDropComponentQueryList.first;
     };
-    ChosenSingleComponent.prototype.isOptionSelected = function (option) {
+    ChosenSingleComponent.prototype.isOptionInitiallySelected = function (option) {
         return this.initialValue == option.value;
     };
     ChosenSingleComponent.prototype.initialSelection = function (initialSelection) {
@@ -324,6 +328,7 @@ var ChosenSingleComponent = (function (_super) {
     };
     ChosenSingleComponent.prototype.selectOption = function (option) {
         this.singleSelectedOption = option;
+        option.selected = true;
         this.updateModel();
         this.chosenBlur();
     };
@@ -331,6 +336,7 @@ var ChosenSingleComponent = (function (_super) {
         if ($event != null) {
             $event.stopPropagation();
         }
+        option.selected = false;
         this.chosenDropComponentQueryList.first.unHighlight(option);
         this.singleSelectedOption = null;
         this.updateModel();
@@ -392,7 +398,7 @@ var ChosenSingleComponent = (function (_super) {
     ], ChosenSingleComponent.prototype, "groups", null);
     __decorate([
         core_1.ViewChildren(ChosenDropComponent), 
-        __metadata('design:type', Object)
+        __metadata('design:type', core_1.QueryList)
     ], ChosenSingleComponent.prototype, "chosenDropComponentQueryList", void 0);
     ChosenSingleComponent = __decorate([
         core_1.Component({
@@ -446,7 +452,7 @@ var ChosenMultipleComponent = (function (_super) {
             this.onChange(null);
         }
     };
-    ChosenMultipleComponent.prototype.isOptionSelected = function (option) {
+    ChosenMultipleComponent.prototype.isOptionInitiallySelected = function (option) {
         if (this.initialValue == null) {
             return false;
         }
@@ -466,6 +472,7 @@ var ChosenMultipleComponent = (function (_super) {
         if (this.multipleSelectedOptions == null) {
             this.multipleSelectedOptions = [];
         }
+        option.selected = true;
         this.multipleSelectedOptions.push(option);
         this.selectionCount++;
         if (this.max_selected_options != null && this.selectionCount == this.max_selected_options) {
@@ -478,7 +485,10 @@ var ChosenMultipleComponent = (function (_super) {
         if ($event != null) {
             $event.stopPropagation();
         }
+        option.selected = false;
+        console.log(this.multipleSelectedOptions.length);
         this.multipleSelectedOptions = this.multipleSelectedOptions.filter(function (option_) { return option_ != option; });
+        console.log(this.multipleSelectedOptions.length);
         this.selectionCount--;
         this.updateModel();
     };
@@ -556,12 +566,12 @@ var ChosenMultipleComponent = (function (_super) {
     ], ChosenMultipleComponent.prototype, "maxselected", void 0);
     __decorate([
         core_1.ViewChildren(ChosenDropComponent), 
-        __metadata('design:type', Object)
+        __metadata('design:type', core_1.QueryList)
     ], ChosenMultipleComponent.prototype, "chosenDropComponentQueryList", void 0);
     ChosenMultipleComponent = __decorate([
         core_1.Component({
             selector: 'chosen-multiple',
-            template: "\n    <div class=\"chosen-container chosen-container-multi\"\n        [class.chosen-container-active]=\"chosenContainerActive\"\n        [class.chosen-with-drop]=\"chosenWithDrop\">\n\n        <ul class=\"chosen-choices\">\n\n                <template [ngIf]=\"options_ != null\">\n                    <template ngFor #option [ngForOf]=\"multipleSelectedOptions\" #i=\"index\">\n                        <li class=\"search-choice\">\n                            <span>{{option.label}}</span>\n                            <a class=\"search-choice-close\" (click)=\"chosenInput.focus();deselectOption(option, $event);\"></a>\n                        </li>\n                    </template>\n                </template>\n\n                <li class=\"search-field\">\n                    <input #chosenInput type=\"text\"\n                    [(ngModel)]=\"inputValue\"\n                    [class.default]=\"isSelectionEmpty()\"\n                    (focus)=\"chosenFocus()\"\n                    (blur)=\"chosenBlur()\"\n                    (keyup)=\"multipleInputKeyUp($event)\"\n                    autocomplete=\"off\"/>\n                </li>\n        </ul>\n\n        <div  class=\"chosen-drop\"\n            [disable_search]=\"true\"\n            [no_results_text]=\"no_results_text\"\n            [display_selected_options]=\"false\"\n            [filterMode]=\"filterMode\"\n            [options]=\"options_\" [groups]=\"groups_\"\n            (optionSelected)=\"selectOption($event)\"></div>\n\n    </div>\n    ",
+            template: "\n    <div class=\"chosen-container chosen-container-multi\"\n        [class.chosen-container-active]=\"chosenContainerActive\"\n        [class.chosen-with-drop]=\"chosenWithDrop\">\n\n        <ul class=\"chosen-choices\">\n\n                <template [ngIf]=\"multipleSelectedOptions != null\">\n                    <template ngFor #option [ngForOf]=\"multipleSelectedOptions\" #i=\"index\">\n                        <li class=\"search-choice\">\n                            <span>{{option.label}}</span>\n                            <a class=\"search-choice-close\" (click)=\"deselectOption(option, $event);\"></a>\n                        </li>\n                    </template>\n                </template>\n\n                <li class=\"search-field\">\n                    <input #chosenInput type=\"text\"\n                    [(ngModel)]=\"inputValue\"\n                    [class.default]=\"isSelectionEmpty()\"\n                    (click)=\"chosenFocus()\"\n                    (blur)=\"chosenBlur()\"\n                    (keyup)=\"multipleInputKeyUp($event)\"\n                    autocomplete=\"off\"/>\n                </li>\n        </ul>\n\n        <div  class=\"chosen-drop\"\n            [disable_search]=\"true\"\n            [no_results_text]=\"no_results_text\"\n            [display_selected_options]=\"false\"\n            [filterMode]=\"filterMode\"\n            [options]=\"options_\" [groups]=\"groups_\"\n            (optionSelected)=\"selectOption($event)\"></div>\n\n    </div>\n    ",
             directives: [common_1.CORE_DIRECTIVES, [ChosenDropComponent]]
         }), 
         __metadata('design:paramtypes', [common_1.NgModel, core_1.ElementRef, core_1.Renderer])

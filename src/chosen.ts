@@ -1,5 +1,5 @@
 import {CORE_DIRECTIVES, NG_VALUE_ACCESSOR, FORM_DIRECTIVES, DefaultValueAccessor, NgModel} from 'angular2/common';
-import {Component, Input, Output, Host, ViewChildren, ElementRef, Renderer, EventEmitter} from 'angular2/core';
+import {Component, Input, Output, Host, ViewChildren,QueryList, ElementRef, Renderer, EventEmitter} from 'angular2/core';
 
 export interface ChosenOptionGroup {
     value:string,
@@ -17,6 +17,7 @@ export interface ChosenOption {
 }
 
 interface InternalChosenOption extends ChosenOption {
+    selected?:boolean;
     hit?:boolean;
     labelWithMark?:string;
     groupIndex?:number;
@@ -184,6 +185,7 @@ abstract class AbstractChosenComponent<T> extends DefaultValueAccessor {
     groups_:Array<InternalChosenOptionGroup>;
 
     public chosenContainerActive:boolean = false;
+
     public chosenWithDrop:boolean = false;
 
     protected inputValue:string;
@@ -229,8 +231,11 @@ abstract class AbstractChosenComponent<T> extends DefaultValueAccessor {
             if (this.initialValue != null) {
                 let initialSelection:Array<InternalChosenOption> = [];
                 this.options_.forEach((option:InternalChosenOption) => {
-                    if (this.isOptionSelected(option)) {
+                    if (this.isOptionInitiallySelected(option)) {
                         initialSelection.push(option);
+                        option.selected = true;
+                    } else {
+                        option.selected = false;
                     }
                 })
                 this.initialSelection(initialSelection);
@@ -273,7 +278,6 @@ abstract class AbstractChosenComponent<T> extends DefaultValueAccessor {
         this.highlightOption();
     }
 
-
     highlightOption() {
         let optionToHighlight = this.getOptionToHighlight();
         if (optionToHighlight != null) {
@@ -281,7 +285,9 @@ abstract class AbstractChosenComponent<T> extends DefaultValueAccessor {
         }
     }
 
-    abstract isOptionSelected(InternalChosenOption):boolean;
+    abstract getOptionToHighlight():InternalChosenOption;
+
+    abstract isOptionInitiallySelected(InternalChosenOption):boolean;
 
     abstract initialSelection(initialSelection:Array<InternalChosenOption>);
 
@@ -293,8 +299,6 @@ abstract class AbstractChosenComponent<T> extends DefaultValueAccessor {
 
     abstract deselectOption(option:InternalChosenOption, event);
 
-    abstract getOptionToHighlight():InternalChosenOption;
-
     chosenFocus() {
         if (!this.onChosenFocus()) {
             return;
@@ -302,7 +306,6 @@ abstract class AbstractChosenComponent<T> extends DefaultValueAccessor {
 
         this.chosenContainerActive = true;
         this.chosenWithDrop = true;
-
         this.highlightOption();
     }
 
@@ -387,7 +390,7 @@ export class ChosenSingleComponent extends AbstractChosenComponent<string> {
     }
 
     @ViewChildren(ChosenDropComponent)
-    chosenDropComponentQueryList;
+    chosenDropComponentQueryList : QueryList<ChosenDropComponent>;
 
     singleSelectedOption:InternalChosenOption;
 
@@ -395,12 +398,11 @@ export class ChosenSingleComponent extends AbstractChosenComponent<string> {
         super(model, el, renderer);
     }
 
-
     ngAfterViewInit() {
         this.chosenDropComponent = this.chosenDropComponentQueryList.first;
     }
 
-    isOptionSelected(option:InternalChosenOption):boolean {
+    isOptionInitiallySelected(option:InternalChosenOption):boolean {
         return this.initialValue == option.value;
     }
 
@@ -424,6 +426,7 @@ export class ChosenSingleComponent extends AbstractChosenComponent<string> {
 
     selectOption(option) {
         this.singleSelectedOption = option;
+        option.selected = true;
         this.updateModel();
         this.chosenBlur();
     }
@@ -432,6 +435,7 @@ export class ChosenSingleComponent extends AbstractChosenComponent<string> {
         if ($event != null) {
             $event.stopPropagation();
         }
+        option.selected = false;
         this.chosenDropComponentQueryList.first.unHighlight(option);
         this.singleSelectedOption = null;
         this.updateModel();
@@ -471,11 +475,11 @@ export class ChosenSingleComponent extends AbstractChosenComponent<string> {
 
         <ul class="chosen-choices">
 
-                <template [ngIf]="options_ != null">
+                <template [ngIf]="multipleSelectedOptions != null">
                     <template ngFor #option [ngForOf]="multipleSelectedOptions" #i="index">
                         <li class="search-choice">
                             <span>{{option.label}}</span>
-                            <a class="search-choice-close" (click)="chosenInput.focus();deselectOption(option, $event);"></a>
+                            <a class="search-choice-close" (click)="deselectOption(option, $event);"></a>
                         </li>
                     </template>
                 </template>
@@ -484,7 +488,7 @@ export class ChosenSingleComponent extends AbstractChosenComponent<string> {
                     <input #chosenInput type="text"
                     [(ngModel)]="inputValue"
                     [class.default]="isSelectionEmpty()"
-                    (focus)="chosenFocus()"
+                    (click)="chosenFocus()"
                     (blur)="chosenBlur()"
                     (keyup)="multipleInputKeyUp($event)"
                     autocomplete="off"/>
@@ -534,7 +538,7 @@ export class ChosenMultipleComponent extends AbstractChosenComponent<Array<strin
     maxselected:EventEmitter<boolean> = new EventEmitter();
 
     @ViewChildren(ChosenDropComponent)
-    chosenDropComponentQueryList;
+    chosenDropComponentQueryList: QueryList<ChosenDropComponent>;
 
     multipleSelectedOptions:Array<InternalChosenOption>;
 
@@ -558,7 +562,7 @@ export class ChosenMultipleComponent extends AbstractChosenComponent<Array<strin
         }
     }
 
-    isOptionSelected(option:InternalChosenOption):boolean {
+    isOptionInitiallySelected(option:InternalChosenOption):boolean {
         if (this.initialValue == null) {
             return false;
         }
@@ -582,6 +586,7 @@ export class ChosenMultipleComponent extends AbstractChosenComponent<Array<strin
             this.multipleSelectedOptions = [];
         }
 
+        option.selected = true;
         this.multipleSelectedOptions.push(option);
         this.selectionCount++;
 
@@ -597,7 +602,10 @@ export class ChosenMultipleComponent extends AbstractChosenComponent<Array<strin
         if ($event != null) {
             $event.stopPropagation();
         }
+        option.selected = false;
+        console.log(this.multipleSelectedOptions.length);
         this.multipleSelectedOptions = this.multipleSelectedOptions.filter((option_:InternalChosenOption) => option_ != option);
+        console.log(this.multipleSelectedOptions.length);
         this.selectionCount--;
         this.updateModel();
     }

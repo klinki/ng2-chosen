@@ -603,9 +603,7 @@ export class ChosenMultipleComponent extends AbstractChosenComponent<Array<strin
             $event.stopPropagation();
         }
         option.selected = false;
-        console.log(this.multipleSelectedOptions.length);
         this.multipleSelectedOptions = this.multipleSelectedOptions.filter((option_:InternalChosenOption) => option_ != option);
-        console.log(this.multipleSelectedOptions.length);
         this.selectionCount--;
         this.updateModel();
     }
@@ -629,8 +627,7 @@ export class ChosenMultipleComponent extends AbstractChosenComponent<Array<strin
     multipleInputKeyUp($event) {
         let value = $event.target.value;
         if ($event.code == "Backspace" && this.previousInputLength == 0) {
-            this.multipleSelectedOptions.pop();
-            this.selectionCount--;
+            this.deselectOption(this.multipleSelectedOptions[this.multipleSelectedOptions.length-1],null);
             return;
         }
         this.inputKeyUp(value);

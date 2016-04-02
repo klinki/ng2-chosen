@@ -390,7 +390,7 @@ export class ChosenSingleComponent extends AbstractChosenComponent<string> {
     }
 
     @ViewChildren(ChosenDropComponent)
-    chosenDropComponentQueryList : QueryList<ChosenDropComponent>;
+    chosenDropComponentQueryList:QueryList<ChosenDropComponent>;
 
     singleSelectedOption:InternalChosenOption;
 
@@ -477,7 +477,7 @@ export class ChosenSingleComponent extends AbstractChosenComponent<string> {
 
                 <template [ngIf]="multipleSelectedOptions != null">
                     <template ngFor #option [ngForOf]="multipleSelectedOptions" #i="index">
-                        <li class="search-choice">
+                        <li class="search-choice" [class.search-choice-focus]="option.focus" >
                             <span>{{option.label}}</span>
                             <a class="search-choice-close" (click)="deselectOption(option, $event);"></a>
                         </li>
@@ -529,7 +529,7 @@ export class ChosenMultipleComponent extends AbstractChosenComponent<Array<strin
     }
 
     @Input()
-    single_backstroke_delete:boolean = false;
+    single_backstroke_delete:boolean = true;
 
     @Input()
     max_selected_options:number = null;
@@ -538,7 +538,7 @@ export class ChosenMultipleComponent extends AbstractChosenComponent<Array<strin
     maxselected:EventEmitter<boolean> = new EventEmitter();
 
     @ViewChildren(ChosenDropComponent)
-    chosenDropComponentQueryList: QueryList<ChosenDropComponent>;
+    chosenDropComponentQueryList:QueryList<ChosenDropComponent>;
 
     multipleSelectedOptions:Array<InternalChosenOption>;
 
@@ -573,7 +573,6 @@ export class ChosenMultipleComponent extends AbstractChosenComponent<Array<strin
         if (initialSelection != null) {
             this.multipleSelectedOptions = initialSelection;
             this.selectionCount = initialSelection.length;
-            console.log(this.selectionCount);
         }
     }
 
@@ -622,16 +621,44 @@ export class ChosenMultipleComponent extends AbstractChosenComponent<Array<strin
         } else {
             this.inputValue = null;
         }
+
+        if (this.selectionCount != 0) {
+            let lastOption = this.multipleSelectedOptions[this.multipleSelectedOptions.length - 1];
+            if (lastOption.focus == true) {
+                if (lastOption.focus == true) {
+                    lastOption.focus = false;
+                }
+                return;
+            }
+        }
     }
 
     multipleInputKeyUp($event) {
         let value = $event.target.value;
-        if ($event.code == "Backspace" && this.previousInputLength == 0) {
-            this.deselectOption(this.multipleSelectedOptions[this.multipleSelectedOptions.length-1],null);
-            return;
+        if ($event.keyCode == 8 && this.previousInputLength == 0) {
+
+            if (this.selectionCount == 0) {
+                return;
+            }
+
+            let lastOption = this.multipleSelectedOptions[this.multipleSelectedOptions.length - 1];
+
+            if (this.single_backstroke_delete || lastOption.focus == true) {
+                this.deselectOption(lastOption, null);
+                if (lastOption.focus == true) {
+                    lastOption.focus = false;
+                }
+                return;
+            } else {
+                lastOption.focus = true;
+            }
         }
         this.inputKeyUp(value);
         this.previousInputLength = value.length;
+    }
+
+    private focusOnLastSelectedOption(focus:boolean) {
+        let lastOption = this.multipleSelectedOptions[this.multipleSelectedOptions.length - 1];
     }
 
     getOptionToHighlight() {

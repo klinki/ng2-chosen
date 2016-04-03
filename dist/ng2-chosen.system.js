@@ -16,7 +16,7 @@ System.register("chosen", ['angular2/common', 'angular2/core'], function(exports
     "use strict";
     var __moduleName = context_1 && context_1.id;
     var common_1, core_1;
-    var ChosenDropComponent, AbstractChosenComponent, ChosenSingleComponent, ChosenMultipleComponent;
+    var InternalChosenOption, ChosenDropComponent, AbstractChosenComponent, ChosenSingleComponent, ChosenMultipleComponent;
     return {
         setters:[
             function (common_1_1) {
@@ -26,6 +26,18 @@ System.register("chosen", ['angular2/common', 'angular2/core'], function(exports
                 core_1 = core_1_1;
             }],
         execute: function() {
+            InternalChosenOption = (function () {
+                function InternalChosenOption(value, label, group) {
+                    this.selected = false;
+                    this.hit = false;
+                    this.highlighted = false;
+                    this.focus = false;
+                    this.value = value;
+                    this.label = label;
+                    this.group = group;
+                }
+                return InternalChosenOption;
+            }());
             ChosenDropComponent = (function () {
                 function ChosenDropComponent() {
                     this.disable_search = false;
@@ -189,7 +201,7 @@ System.register("chosen", ['angular2/common', 'angular2/core'], function(exports
                 AbstractChosenComponent.prototype.setOptions = function (options) {
                     if (options != null) {
                         this.options_ = options.map(function (option) {
-                            return { value: option.value, label: option.label, selected: false, hit: false, group: option.group };
+                            return new InternalChosenOption(option.value, option.label, option.group);
                         });
                         this.updateOptions();
                     }
@@ -349,12 +361,12 @@ System.register("chosen", ['angular2/common', 'angular2/core'], function(exports
                         $event.stopPropagation();
                     }
                     option.selected = false;
-                    this.chosenDropComponentQueryList.first.unHighlight(option);
+                    this.chosenDropComponent.unHighlight(option);
                     this.singleSelectedOption = null;
                     this.updateModel();
                 };
                 ChosenSingleComponent.prototype.onChosenFocus = function () {
-                    this.chosenDropComponentQueryList.first.inputFocus();
+                    this.chosenDropComponent.inputFocus();
                     return true;
                 };
                 ChosenSingleComponent.prototype.getOptionToHighlight = function () {
@@ -518,8 +530,8 @@ System.register("chosen", ['angular2/common', 'angular2/core'], function(exports
                     }
                     if (this.selectionCount != 0) {
                         var lastOption = this.multipleSelectedOptions[this.multipleSelectedOptions.length - 1];
-                        if (lastOption.focus == true) {
-                            if (lastOption.focus == true) {
+                        if (lastOption.focus) {
+                            if (lastOption.focus) {
                                 lastOption.focus = false;
                             }
                             return;
@@ -533,9 +545,9 @@ System.register("chosen", ['angular2/common', 'angular2/core'], function(exports
                             return;
                         }
                         var lastOption = this.multipleSelectedOptions[this.multipleSelectedOptions.length - 1];
-                        if (this.single_backstroke_delete || lastOption.focus == true) {
+                        if (this.single_backstroke_delete || lastOption.focus) {
                             this.deselectOption(lastOption, null);
-                            if (lastOption.focus == true) {
+                            if (lastOption.focus) {
                                 lastOption.focus = false;
                             }
                             return;

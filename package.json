@@ -1,8 +1,10 @@
 {
   "name": "ng2-chosen",
-  "version" : "0.0.2-beta5",
-  "description" : "Angular 2 implementation of Chosen",
-  "devDependencies": {     
+  "version": "0.0.2-beta5",
+  "description": "Angular 2 implementation of Chosen",
+  "author": "Mourad ZOUABI",
+  "repository": "https://github.com/zouabimourad/ng2-chosen",
+  "devDependencies": {
     "bower": "1.6.5",
     "connect": "^3.3.4",
     "del": "~1.1.1",

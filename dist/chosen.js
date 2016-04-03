@@ -15,6 +15,18 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 var common_1 = require('angular2/common');
 var core_1 = require('angular2/core');
+var InternalChosenOption = (function () {
+    function InternalChosenOption(value, label, group) {
+        this.selected = false;
+        this.hit = false;
+        this.highlighted = false;
+        this.focus = false;
+        this.value = value;
+        this.label = label;
+        this.group = group;
+    }
+    return InternalChosenOption;
+}());
 var ChosenDropComponent = (function () {
     function ChosenDropComponent() {
         this.disable_search = false;
@@ -177,7 +189,7 @@ var AbstractChosenComponent = (function (_super) {
     AbstractChosenComponent.prototype.setOptions = function (options) {
         if (options != null) {
             this.options_ = options.map(function (option) {
-                return { value: option.value, label: option.label, selected: false, hit: false, group: option.group };
+                return new InternalChosenOption(option.value, option.label, option.group);
             });
             this.updateOptions();
         }
@@ -337,12 +349,12 @@ var ChosenSingleComponent = (function (_super) {
             $event.stopPropagation();
         }
         option.selected = false;
-        this.chosenDropComponentQueryList.first.unHighlight(option);
+        this.chosenDropComponent.unHighlight(option);
         this.singleSelectedOption = null;
         this.updateModel();
     };
     ChosenSingleComponent.prototype.onChosenFocus = function () {
-        this.chosenDropComponentQueryList.first.inputFocus();
+        this.chosenDropComponent.inputFocus();
         return true;
     };
     ChosenSingleComponent.prototype.getOptionToHighlight = function () {
@@ -505,8 +517,8 @@ var ChosenMultipleComponent = (function (_super) {
         }
         if (this.selectionCount != 0) {
             var lastOption = this.multipleSelectedOptions[this.multipleSelectedOptions.length - 1];
-            if (lastOption.focus == true) {
-                if (lastOption.focus == true) {
+            if (lastOption.focus) {
+                if (lastOption.focus) {
                     lastOption.focus = false;
                 }
                 return;
@@ -520,9 +532,9 @@ var ChosenMultipleComponent = (function (_super) {
                 return;
             }
             var lastOption = this.multipleSelectedOptions[this.multipleSelectedOptions.length - 1];
-            if (this.single_backstroke_delete || lastOption.focus == true) {
+            if (this.single_backstroke_delete || lastOption.focus) {
                 this.deselectOption(lastOption, null);
-                if (lastOption.focus == true) {
+                if (lastOption.focus) {
                     lastOption.focus = false;
                 }
                 return;

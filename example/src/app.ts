@@ -19,7 +19,6 @@ export class Application {
 
     constructor() {
 
-
         this.groups = [{"value":"africa","label":"Africa"} ,{"value":"europe","label":"Europe"} ,{"value":"america","label":"America"}]
 
         setTimeout(()=> {

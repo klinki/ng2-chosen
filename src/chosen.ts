@@ -2,8 +2,8 @@ import {CORE_DIRECTIVES, NG_VALUE_ACCESSOR, FORM_DIRECTIVES, DefaultValueAccesso
 import {Component, Input, Output, Host, ViewChildren,QueryList, ElementRef, Renderer, EventEmitter} from 'angular2/core';
 
 export interface ChosenOptionGroup {
-    value:string,
-    label:string,
+    value:string;
+    label:string;
 }
 
 interface InternalChosenOptionGroup extends ChosenOptionGroup {
@@ -11,19 +11,30 @@ interface InternalChosenOptionGroup extends ChosenOptionGroup {
 }
 
 export interface ChosenOption {
-    value:string,
-    label:string,
+    value:string;
+    label:string;
     group?:string;
 }
 
-interface InternalChosenOption extends ChosenOption {
-    selected?:boolean;
-    hit?:boolean;
-    labelWithMark?:string;
-    groupIndex?:number;
-    groupObject?:InternalChosenOptionGroup;
-    highlighted?:boolean;
-    focus?:boolean;
+class InternalChosenOption implements ChosenOption {
+
+    value:string;
+    label:string;
+    group:string;
+
+    selected:boolean = false;
+    hit:boolean = false;
+    labelWithMark:string;
+    groupIndex:number;
+    groupObject:InternalChosenOptionGroup;
+    highlighted:boolean = false;
+    focus:boolean = false;
+
+    constructor(value:string, label:string, group:string) {
+        this.value = value;
+        this.label = label;
+        this.group = group;
+    }
 }
 
 @Component({
@@ -202,7 +213,7 @@ abstract class AbstractChosenComponent<T> extends DefaultValueAccessor {
     protected setOptions(options:Array<ChosenOption>) {
         if (options != null) {
             this.options_ = options.map(option=> {
-                return {value: option.value, label: option.label, selected: false, hit: false, group: option.group};
+                return new InternalChosenOption(option.value, option.label, option.group);
             });
             this.updateOptions();
         }
@@ -436,13 +447,13 @@ export class ChosenSingleComponent extends AbstractChosenComponent<string> {
             $event.stopPropagation();
         }
         option.selected = false;
-        this.chosenDropComponentQueryList.first.unHighlight(option);
+        this.chosenDropComponent.unHighlight(option);
         this.singleSelectedOption = null;
         this.updateModel();
     }
 
     onChosenFocus():boolean {
-        this.chosenDropComponentQueryList.first.inputFocus();
+        this.chosenDropComponent.inputFocus();
         return true;
     }
 
@@ -624,8 +635,8 @@ export class ChosenMultipleComponent extends AbstractChosenComponent<Array<strin
 
         if (this.selectionCount != 0) {
             let lastOption = this.multipleSelectedOptions[this.multipleSelectedOptions.length - 1];
-            if (lastOption.focus == true) {
-                if (lastOption.focus == true) {
+            if (lastOption.focus) {
+                if (lastOption.focus) {
                     lastOption.focus = false;
                 }
                 return;
@@ -643,9 +654,9 @@ export class ChosenMultipleComponent extends AbstractChosenComponent<Array<strin
 
             let lastOption = this.multipleSelectedOptions[this.multipleSelectedOptions.length - 1];
 
-            if (this.single_backstroke_delete || lastOption.focus == true) {
+            if (this.single_backstroke_delete || lastOption.focus) {
                 this.deselectOption(lastOption, null);
-                if (lastOption.focus == true) {
+                if (lastOption.focus) {
                     lastOption.focus = false;
                 }
                 return;

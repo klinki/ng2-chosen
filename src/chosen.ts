@@ -17,13 +17,11 @@ export interface ChosenOption {
 }
 
 class InternalChosenOption implements ChosenOption {
-
     value:string;
     label:string;
     group:string;
 
     selected:boolean = false;
-    hit:boolean = false;
     labelWithMark:string;
     groupIndex:number;
     groupObject:InternalChosenOptionGroup;
@@ -40,12 +38,12 @@ class InternalChosenOption implements ChosenOption {
 @Component({
     selector: 'div.chosen-drop',
     template: `
-        <div *ngIf="!isSearchDisabled()" class="chosen-search">
+        <div *ngIf="!disableSearch" class="chosen-search">
             <input (blur)="onInputBlur()" (keyup)="onInputKeyup($event.target.value)" [(ngModel)]="inputValue" #chosenInput type="text" autocomplete="off">
         </div>
         <ul class="chosen-results">
             <template ngFor #option [ngForOf]="options_" #i="index">
-                <template [ngIf]="isOptionVisible(option)">
+
                  <li *ngIf="showGroup(option,i)" class="group-result">{{option.groupObject.label}}</li>
                  <li [class.highlighted]="option.highlighted"
                     [class.result-selected]="isOptionSelected(option)"
@@ -55,9 +53,9 @@ class InternalChosenOption implements ChosenOption {
                     (mousedown)="selectOption(option)">
                     <span [innerHtml]="getOptionLabel(option)"></span>
                 </li>
-                </template>
+
             </template>
-            <li *ngIf="filterMode && filterResultCount == 0" class="no-results">{{no_results_text}} "<span>{{inputValue}}</span>"</li>
+            <li *ngIf="filterMode && options_ == null" class="no-results">{{no_results_text}} "<span>{{inputValue}}</span>"</li>
         </ul>
     `,
     directives: [CORE_DIRECTIVES, FORM_DIRECTIVES]
@@ -67,10 +65,7 @@ class ChosenDropComponent {
     inputValue:string;
 
     @Input()
-    disable_search = false;
-
-    @Input()
-    disable_search_threshold = 0;
+    disableSearch = false;
 
     @Input()
     no_results_text;
@@ -123,15 +118,6 @@ class ChosenDropComponent {
         option.highlighted = false;
     }
 
-    isSearchDisabled() {
-        return this.disable_search
-            || (this.disable_search_threshold != 0 && this.options_ != null && this.options_.length <= this.disable_search_threshold);
-    }
-
-    isOptionVisible(option):boolean {
-        return !this.filterMode || (this.filterMode && option.hit);
-    }
-
     getOptionLabel(option):string {
         if (this.filterMode) {
             return option.labelWithMark;
@@ -166,16 +152,7 @@ class ChosenDropComponent {
             if (i == 0) {
                 return true;
             } else {
-                if (this.filterMode) {
-                    for (let j = i - 1; j > 0; j--) {
-                        if (this.options_[j].hit) {
-                            return this.options_[j].group != option.group;
-                        }
-                    }
-                    return true;
-                } else {
-                    return this.options_[i - 1].group != option.group;
-                }
+                return this.options_[i - 1].group != option.group;
             }
         } else {
             return false;
@@ -193,6 +170,8 @@ abstract class AbstractChosenComponent<T> extends DefaultValueAccessor {
 
     public options_:Array<InternalChosenOption>;
 
+    public dropOptions:Array<InternalChosenOption>;
+
     groups_:Array<InternalChosenOptionGroup>;
 
     public chosenContainerActive:boolean = false;
@@ -201,9 +180,7 @@ abstract class AbstractChosenComponent<T> extends DefaultValueAccessor {
 
     protected inputValue:string;
 
-    public filterMode:boolean = false;
-
-    public filterResultCount:number = 0;
+    filterMode:boolean;
 
     constructor(private model:NgModel, private el:ElementRef, private renderer:Renderer) {
         super(renderer, el);
@@ -264,26 +241,29 @@ abstract class AbstractChosenComponent<T> extends DefaultValueAccessor {
                 })
                 this.options_.sort((a:InternalChosenOption, b:InternalChosenOption) => a.groupIndex - b.groupIndex);
             }
+            this.dropOptions = this.options_;
         }
     }
 
     protected inputKeyUp(inputValue) {
+        this.filterMode = true;
+        let dropOptions = null;
         if (inputValue.trim().length > 0) {
-            this.filterResultCount = 0;
             this.options_.forEach((option:InternalChosenOption) => {
                 var indexOf = option.label.toLowerCase().indexOf(inputValue.toLowerCase());
                 if (indexOf > -1) {
-                    let subString = option.label.substring(indexOf, inputValue.length);
+                    let subString = option.label.substring(indexOf, indexOf + inputValue.length);
                     option.labelWithMark = option.label.replace(subString, `<em>${subString}</em>`);
-                    option.hit = true;
-                    this.filterResultCount++;
-                } else {
-                    option.hit = false;
+                    if (dropOptions == null) {
+                        dropOptions = [];
+                    }
+                    dropOptions.push(option);
                 }
             });
+            this.dropOptions = dropOptions;
             this.filterMode = true;
         } else {
-            this.filterResultCount = 0;
+            this.dropOptions = this.options_;
             this.filterMode = false;
         }
         this.highlightOption();
@@ -358,12 +338,11 @@ abstract class AbstractChosenComponent<T> extends DefaultValueAccessor {
         </a>
 
         <div class="chosen-drop"
-            [disable_search]="disable_search"
-            [disable_search_threshold]="disable_search_threshold"
+            [disableSearch]="isSearchDisabled()"
             [no_results_text]="no_results_text"
             [display_selected_options]="true"
             [filterMode]="filterMode"
-            [options]="options_" [groups]="groups_"
+            [options]="dropOptions" [groups]="groups_"
             (optionSelected)="selectOption($event)"
             (inputKeyUp)="inputKeyUp($event)"
             (inputBlur)="chosenBlur()"></div>
@@ -413,6 +392,11 @@ export class ChosenSingleComponent extends AbstractChosenComponent<string> {
         this.chosenDropComponent = this.chosenDropComponentQueryList.first;
     }
 
+    isSearchDisabled() {
+        return this.disable_search
+            || (this.disable_search_threshold != 0 && this.options_ != null && this.options_.length <= this.disable_search_threshold);
+    }
+
     isOptionInitiallySelected(option:InternalChosenOption):boolean {
         return this.initialValue == option.value;
     }
@@ -458,17 +442,8 @@ export class ChosenSingleComponent extends AbstractChosenComponent<string> {
     }
 
     getOptionToHighlight() {
-        if (!this.filterMode) {
-            if (this.singleSelectedOption != null) {
-                return this.singleSelectedOption;
-            }
-        } else {
-            if (this.options_ != null) {
-                let firstHitOption = this.options_.find((option:InternalChosenOption) => option.hit);
-                if (firstHitOption != null) {
-                    return firstHitOption;
-                }
-            }
+        if (this.singleSelectedOption != null) {
+            return this.singleSelectedOption;
         }
     }
 
@@ -507,11 +482,11 @@ export class ChosenSingleComponent extends AbstractChosenComponent<string> {
         </ul>
 
         <div  class="chosen-drop"
-            [disable_search]="true"
+            [disableSearch]="true"
             [no_results_text]="no_results_text"
             [display_selected_options]="false"
             [filterMode]="filterMode"
-            [options]="options_" [groups]="groups_"
+            [options]="dropOptions" [groups]="groups_"
             (optionSelected)="selectOption($event)"></div>
 
     </div>
@@ -592,6 +567,10 @@ export class ChosenMultipleComponent extends AbstractChosenComponent<Array<strin
     }
 
     selectOption(option) {
+        if(option.selected) {
+            return;
+        }
+
         if (this.multipleSelectedOptions == null) {
             this.multipleSelectedOptions = [];
         }
@@ -664,6 +643,7 @@ export class ChosenMultipleComponent extends AbstractChosenComponent<Array<strin
                 lastOption.focus = true;
             }
         }
+        this.chosenDropComponent.inputValue = value;
         this.inputKeyUp(value);
         this.previousInputLength = value.length;
     }
@@ -673,11 +653,9 @@ export class ChosenMultipleComponent extends AbstractChosenComponent<Array<strin
     }
 
     getOptionToHighlight() {
-        if (this.options_ != null) {
-            let firstNonSelectedOption = this.options_.find((option:InternalChosenOption) => {
-                let selected = this.multipleSelectedOptions.find((option_) => option_ == option) != null;
-                return !selected && (!this.filterMode || (this.filterMode && option.hit ))
-            });
+        let options = this.filterMode ? this.dropOptions : this.options_;
+        if (options != null) {
+            let firstNonSelectedOption = options.find((option:InternalChosenOption) => !option.selected);
             if (firstNonSelectedOption != null) {
                 return firstNonSelectedOption;
             }
@@ -685,6 +663,3 @@ export class ChosenMultipleComponent extends AbstractChosenComponent<Array<strin
         return null;
     }
 }
-
-
-

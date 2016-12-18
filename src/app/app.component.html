@@ -1,0 +1,20 @@
+<div >
+
+<p >
+
+  <chosen-single [allow_single_deselect]="true" [disable_search_threshold]="3" [(ngModel)]="value"  name="value"  [options]="options"  ></chosen-single>
+
+  {{value}}
+
+</p>
+
+
+<p>
+
+  <chosen-multiple [(ngModel)]="values"  name="values" [groups]="groups"    [options]="options"></chosen-multiple>
+
+  {{values}}
+
+</p>
+
+</div>

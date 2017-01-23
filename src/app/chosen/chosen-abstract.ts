@@ -73,20 +73,20 @@ export abstract class AbstractChosenComponent<T> implements ControlValueAccessor
           } else {
             option.selected = false;
           }
-        })
+        });
         this.initialSelection(initialSelection);
       }
 
       if (this.groups_ != null) {
         this.options_.forEach((option: InternalChosenOption) => {
           if (option.group != null) {
-            let optionGroup: InternalChosenOptionGroup = this.groups_.find(group => group.value == option.group);
+            let optionGroup: InternalChosenOptionGroup = this.groups_.find(group => group.value === option.group);
             option.groupIndex = optionGroup.index;
             option.groupObject = optionGroup;
           } else {
             option.groupIndex = -1;
           }
-        })
+        });
         this.options_.sort((a: InternalChosenOption, b: InternalChosenOption) => a.groupIndex - b.groupIndex);
       }
       this.dropOptions = this.options_;
@@ -98,7 +98,7 @@ export abstract class AbstractChosenComponent<T> implements ControlValueAccessor
     let dropOptions = null;
     if (inputValue.trim().length > 0) {
       this.options_.forEach((option: InternalChosenOption) => {
-        var indexOf = option.label.toLowerCase().indexOf(inputValue.toLowerCase());
+        let indexOf = option.label.toLowerCase().indexOf(inputValue.toLowerCase());
         if (indexOf > -1) {
           let subString = option.label.substring(indexOf, indexOf + inputValue.length);
           option.labelWithMark = option.label.replace(subString, `<em>${subString}</em>`);

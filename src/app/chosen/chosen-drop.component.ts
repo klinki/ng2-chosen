@@ -92,7 +92,7 @@ export class ChosenDropComponent {
   }
 
   selectOption(option) {
-    this.optionSelected.emit(option)
+    this.optionSelected.emit(option);
   }
 
   isOptionSelected(option) {
@@ -114,10 +114,10 @@ export class ChosenDropComponent {
 
   showGroup(option: InternalChosenOption, i: number) {
     if (option.group != null && option.groupObject != null) {
-      if (i == 0) {
+      if (i === 0) {
         return true;
       } else {
-        return this.options_[i - 1].group != option.group;
+        return this.options_[i - 1].group !== option.group;
       }
     } else {
       return false;

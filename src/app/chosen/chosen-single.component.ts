@@ -91,25 +91,25 @@ export class ChosenSingleComponent extends AbstractChosenComponent<string> {
 
   isSearchDisabled() {
     return this.disable_search
-      || (this.disable_search_threshold != 0 && this.options_ != null && this.options_.length <= this.disable_search_threshold);
+      || (this.disable_search_threshold !== 0 && this.options_ !== null && this.options_.length <= this.disable_search_threshold);
   }
 
   isOptionInitiallySelected(option: InternalChosenOption): boolean {
-    return this.initialValue == option.value;
+    return this.initialValue === option.value;
   }
 
   protected initialSelection(initialSelection: Array<InternalChosenOption>) {
-    if (initialSelection != null && initialSelection.length > 0) {
+    if (initialSelection !== null && initialSelection.length > 0) {
       this.singleSelectedOption = initialSelection[0];
     }
   }
 
   isSelectionEmpty(): boolean {
-    return this.singleSelectedOption == null;
+    return this.singleSelectedOption === null;
   }
 
   updateModel() {
-    if (this.singleSelectedOption == null) {
+    if (this.singleSelectedOption === null) {
       this.onChange(null);
     } else {
       this.onChange(this.singleSelectedOption.value);
@@ -124,7 +124,7 @@ export class ChosenSingleComponent extends AbstractChosenComponent<string> {
   }
 
   deselectOption(option, $event) {
-    if ($event != null) {
+    if ($event !== null) {
       $event.stopPropagation();
     }
     option.selected = false;
@@ -139,7 +139,7 @@ export class ChosenSingleComponent extends AbstractChosenComponent<string> {
   }
 
   protected getOptionToHighlight() {
-    if (this.singleSelectedOption != null) {
+    if (this.singleSelectedOption !== null) {
       return this.singleSelectedOption;
     }
   }

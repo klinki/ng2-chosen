@@ -10,7 +10,7 @@ import {Component, Input, ViewChildren, QueryList, ElementRef, Renderer} from "@
 export class Testx {
 
   @Input()
-  mode : string ="";
+  mode: string = "";
 
 
 }

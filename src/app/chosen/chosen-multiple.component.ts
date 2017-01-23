@@ -109,7 +109,7 @@ export class ChosenMultipleComponent extends AbstractChosenComponent<Array<strin
   }
 
   updateModel() {
-    if (this.multipleSelectedOptions != null) {
+    if (this.multipleSelectedOptions !== null) {
       this.onChange(this.multipleSelectedOptions.map((option: InternalChosenOption) => option.value));
     } else {
       this.onChange(null);
@@ -117,21 +117,21 @@ export class ChosenMultipleComponent extends AbstractChosenComponent<Array<strin
   }
 
   protected isOptionInitiallySelected(option: InternalChosenOption): boolean {
-    if (this.initialValue == null) {
+    if (this.initialValue === null) {
       return false;
     }
-    return this.initialValue.find(value => value == option.value) != null;
+    return this.initialValue.find(value => value === option.value) != null;
   }
 
   initialSelection(initialSelection: Array<InternalChosenOption>) {
-    if (initialSelection != null) {
+    if (initialSelection !== null) {
       this.multipleSelectedOptions = initialSelection;
       this.selectionCount = initialSelection.length;
     }
   }
 
   isSelectionEmpty(): boolean {
-    return this.selectionCount == 0;
+    return this.selectionCount === 0;
   }
 
   selectOption(option) {
@@ -139,7 +139,7 @@ export class ChosenMultipleComponent extends AbstractChosenComponent<Array<strin
       return;
     }
 
-    if (this.multipleSelectedOptions == null) {
+    if (this.multipleSelectedOptions === null) {
       this.multipleSelectedOptions = [];
     }
 
@@ -147,7 +147,7 @@ export class ChosenMultipleComponent extends AbstractChosenComponent<Array<strin
     this.multipleSelectedOptions.push(option);
     this.selectionCount++;
 
-    if (this.max_selected_options != null && this.selectionCount == this.max_selected_options) {
+    if (this.max_selected_options !== null && this.selectionCount === this.max_selected_options) {
       this.maxselected.emit(true);
     }
 
@@ -160,13 +160,13 @@ export class ChosenMultipleComponent extends AbstractChosenComponent<Array<strin
       $event.stopPropagation();
     }
     option.selected = false;
-    this.multipleSelectedOptions = this.multipleSelectedOptions.filter((option_: InternalChosenOption) => option_ != option);
+    this.multipleSelectedOptions = this.multipleSelectedOptions.filter((option_: InternalChosenOption) => option_ !== option);
     this.selectionCount--;
     this.updateModel();
   }
 
   onChosenFocus(): boolean {
-    if (this.max_selected_options != null && this.selectionCount == this.max_selected_options) {
+    if (this.max_selected_options !== null && this.selectionCount === this.max_selected_options) {
       return false;
     }
     this.inputValue = null;
@@ -180,7 +180,7 @@ export class ChosenMultipleComponent extends AbstractChosenComponent<Array<strin
       this.inputValue = null;
     }
 
-    if (this.selectionCount != 0) {
+    if (this.selectionCount !== 0) {
       let lastOption = this.multipleSelectedOptions[this.multipleSelectedOptions.length - 1];
       if (lastOption.focus) {
         if (lastOption.focus) {
@@ -193,9 +193,9 @@ export class ChosenMultipleComponent extends AbstractChosenComponent<Array<strin
 
   multipleInputKeyUp($event) {
     let value = $event.target.value;
-    if ($event.keyCode == 8 && this.previousInputLength == 0) {
+    if ($event.keyCode === 8 && this.previousInputLength === 0) {
 
-      if (this.selectionCount == 0) {
+      if (this.selectionCount === 0) {
         return;
       }
 
@@ -222,9 +222,9 @@ export class ChosenMultipleComponent extends AbstractChosenComponent<Array<strin
 
   getOptionToHighlight() {
     let options = this.filterMode ? this.dropOptions : this.options_;
-    if (options != null) {
+    if (options !== null) {
       let firstNonSelectedOption = options.find((option: InternalChosenOption) => !option.selected);
-      if (firstNonSelectedOption != null) {
+      if (firstNonSelectedOption !== null) {
         return firstNonSelectedOption;
       }
     }
